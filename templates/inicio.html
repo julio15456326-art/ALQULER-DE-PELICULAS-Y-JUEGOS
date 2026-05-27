@@ -23,15 +23,44 @@
         <h1>Alquiler de Pelis Y juegos</h1>
     </section>
 
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div style="width: 80%; margin: 20px auto; text-align: center;">
+                {% for categoria, m in mensajes %}
+                    <p style="color: {% if categoria == 'success' %}#00ff66{% else %}#ff4444{% endif %}; font-weight: bold;">{{ m }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <main class="catalogo">
         
         <h2>Películas</h2>
-        <div class="lista-items">
+        <div class="lista-items" style="display: flex; flex-wrap: wrap; gap: 20px;">
             {% for p in peliculas %}
-                <div class="item">
-                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
-                    <h3>{{ p.titulo }}</h3>
-                    <p>Precio: ${{ p.precio }} | Stock: {{ p.stock }}</p>
+                <div class="item" style="border: 1px solid #333; padding: 15px; border-radius: 8px; width: 220px; background: #0b0b0b;">
+                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}" style="width: 100%; height: auto; border-radius: 4px;">
+                    <h3 style="margin: 10px 0 5px 0;">{{ p.titulo }}</h3>
+                    <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9rem;">Género: {{ p.genero }}</p>
+                    
+                    <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9rem;">Formato: {{ p.obtener_formato() }}</p>
+                    
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem;">
+                        Estado: 
+                        {% if p.stock > 0 %}
+                            <span style="color: #00ff66; font-weight: bold;">✔ Disponible (Stock: {{ p.stock }})</span>
+                        {% else %}
+                            <span style="color: #ff4444; font-weight: bold;">❌ Alquilado</span>
+                        {% endif %}
+                    </p>
+
+                    <p style="font-weight: bold; color: #fff; margin-bottom: 15px;">Precio: ${{ "%.2f"|format(p.precio_alquiler) }}</p>
+                    
+                    {% if p.stock > 0 %}
+                        <a href="{{ url_for('alquilar_item', prod_id=p.id) }}" style="display: block; text-align: center; background: #fff; color: #000; padding: 8px; text-decoration: none; font-weight: bold; border-radius: 4px;">Alquilar</a>
+                    {% else %}
+                        <span style="display: block; text-align: center; background: #222; color: #555; padding: 8px; font-weight: bold; border-radius: 4px; cursor: not-allowed;">Sin Stock</span>
+                    {% endif %}
                 </div>
             {% else %}
                 <p>No hay películas en el stock.</p>
@@ -39,12 +68,31 @@
         </div>
 
         <h2>Videojuegos</h2>
-        <div class="lista-items">
+        <div class="lista-items" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
             {% for j in juegos %}
-                <div class="item">
-                    <img src="{{ url_for('static', filename='img/' + j.imagen) }}" alt="{{ j.titulo }}">
-                    <h3>{{ j.titulo }}</h3>
-                    <p>Precio: ${{ j.precio }} | Stock: {{ j.stock }}</p>
+                <div class="item" style="border: 1px solid #333; padding: 15px; border-radius: 8px; width: 220px; background: #0b0b0b;">
+                    <img src="{{ url_for('static', filename='img/' + j.imagen) }}" alt="{{ j.titulo }}" style="width: 100%; height: auto; border-radius: 4px;">
+                    <h3 style="margin: 10px 0 5px 0;">{{ j.titulo }}</h3>
+                    <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9rem;">Género: {{ j.genero }}</p>
+                    
+                    <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9rem;">Plataforma: {{ j.obtener_plataforma() }}</p>
+                    
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem;">
+                        Estado: 
+                        {% if j.stock > 0 %}
+                            <span style="color: #00ff66; font-weight: bold;">✔ Disponible (Stock: {{ j.stock }})</span>
+                        {% else %}
+                            <span style="color: #ff4444; font-weight: bold;">❌ Alquilado</span>
+                        {% endif %}
+                    </p>
+
+                    <p style="font-weight: bold; color: #fff; margin-bottom: 15px;">Precio: ${{ "%.2f"|format(j.precio_alquiler) }}</p>
+                    
+                    {% if j.stock > 0 %}
+                        <a href="{{ url_for('alquilar_item', prod_id=j.id) }}" style="display: block; text-align: center; background: #fff; color: #000; padding: 8px; text-decoration: none; font-weight: bold; border-radius: 4px;">Alquilar</a>
+                    {% else %}
+                        <span style="display: block; text-align: center; background: #222; color: #555; padding: 8px; font-weight: bold; border-radius: 4px; cursor: not-allowed;">Sin Stock</span>
+                    {% endif %}
                 </div>
             {% else %}
                 <p>No hay juegos en el stock.</p>

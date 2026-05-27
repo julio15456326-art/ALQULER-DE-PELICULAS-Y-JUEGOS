@@ -1,177 +1,263 @@
 from flask import Flask, render_template, request, url_for, session, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 import os
-from werkzeug.utils import secure_filename
-from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'mi_llave_secreta_super_segura'
 
-# 1. CONFIGURACIÓN AUTOMÁTICA DE LA NUEVA BASE DE DATOS
+# =========================================================================
+# 1. CONFIGURACIÓN DE LA BASE DE DATOS
+# =========================================================================
 db_path = os.path.join(os.path.dirname(__file__), 'alquileres.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- CONTROL DE ROLES ---
-NIVELES_ACCESO = {'cliente': 1, 'gestor': 5, 'admin': 10}
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'img')
 
-def requiere_nivel(nivel_minimo):
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            rol_usuario = session.get('usuario_rol', 'cliente')
-            nivel_usuario = NIVELES_ACCESO.get(rol_usuario, 1)
-            if nivel_usuario < nivel_minimo:
-                flash("No tenés permisos suficientes para entrar acá.", "danger")
-                return redirect(url_for('inicio'))
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
 
 # =========================================================================
-# 2. MODELOS DE BASE DE DATOS (SÚPER REDUCIDOS)
+# 2. MODELOS DE CLASES (POO PERSISTENTE CON SQLALCHEMY)
 # =========================================================================
 
+# Clase que maneja el registro y los datos de las cuentas de usuarios (Clientes y Administrador)
 class Usuario(db.Model):
+    __tablename__ = 'usuarios'
+    
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    rol = db.Column(db.String(20), default='cliente')
+    rol = db.Column(db.String(20), default='cliente') # 'cliente' o 'admin'
 
-class Pelicula(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(100), nullable=False)
-    precio = db.Column(db.Float, nullable=False)
+    # Método de instancia: Guarda el usuario actual en la base de datos relacional
+    def guardar(self):
+        db.session.add(self)
+        db.session.commit()
+
+    # Método de clase: Busca en la base de datos si existe un usuario con ese email y contraseña
+    @classmethod
+    def autenticar(cls, email_f, pass_f):
+        return cls.query.filter_by(email=email_f, password=pass_f).first()
+
+
+# SUPERCLASE (CLASE PADRE): Contiene todos los atributos y comportamientos comunes del catálogo [cite: 11, 109]
+class ProductoAlquiler(db.Model):
+    __tablename__ = 'productos_alquiler'
+    
+    id = db.Column(db.Integer, primary_key=True)                 # Identificador único de cada artículo [cite: 50, 91]
+    titulo = db.Column(db.String(100), nullable=False)            # Título de la película o videojuego [cite: 50, 91]
+    genero = db.Column(db.String(50), nullable=True)              # Género para clasificación (ej: Acción, Terror) [cite: 50, 92]
+    alquilado = db.Column(db.Boolean, default=False)              # Estado lógico de disponibilidad [cite: 50, 74, 93]
+    precio_alquiler = db.Column(db.Float, nullable=False)         # Costo de renta del artículo [cite: 50, 94]
+    
+    # Atributos adicionales para la gestión interna de la aplicación web [cite: 18, 24]
     stock = db.Column(db.Integer, default=1)
     imagen = db.Column(db.String(100), default='default.jpg')
+    tipo = db.Column(db.String(50), nullable=False)               # Guarda textualmente 'pelicula' o 'juego' [cite: 50, 73]
 
-class Juego(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(100), nullable=False)
-    precio = db.Column(db.Float, nullable=False)
-    stock = db.Column(db.Integer, default=1)
-    imagen = db.Column(db.String(100), default='default.jpg')
+    # Columnas específicas de las clases hijas (mapeadas mediante Herencia en Tabla Única) [cite: 109]
+    formato = db.Column(db.String(50), nullable=True)             # Atributo exclusivo de películas (ej: Blu-ray) [cite: 73, 100]
+    plataforma = db.Column(db.String(50), nullable=True)          # Atributo exclusivo de videojuegos (ej: PS5) [cite: 50, 73, 97]
 
-# Creación automática del archivo .db y sus tablas
-with app.app_context():
-    db.create_all()
+    # Método de negocio: Reduce el stock disponible y cambia el estado a "Alquilado" si corresponde [cite: 6, 74, 77, 95]
+    def alquilar(self):
+        if self.stock > 0:
+            self.stock -= 1
+            if self.stock == 0:
+                self.alquilado = True                             # Cambia el estado a No Disponible [cite: 74, 77]
+            db.session.commit()
+            return True
+        return False
+
+    # Método de negocio: Incrementa el stock al retornar el artículo y lo vuelve a dejar disponible [cite: 6, 78, 96]
+    def devolver(self):
+        self.stock += 1
+        self.alquilado = False                                    # El producto vuelve a estar libre para alquiler [cite: 78]
+        db.session.commit()
+        return True
+
+
+# SUBCLASE (CLASE HIJA): Modela las películas aplicando la regla de herencia "es un producto de alquiler" [cite: 109]
+class Pelicula(ProductoAlquiler):
+    
+    # Método específico: Devuelve el formato físico o digital de la película (ej: DVD, Blu-ray, Streaming) [cite: 73, 101]
+    def obtener_formato(self):
+        return self.formato
+
+
+# SUBCLASE (CLASE HIJA): Modela los videojuegos aplicando la regla de herencia "es un producto de alquiler" [cite: 109]
+class Juego(ProductoAlquiler):
+    
+    # Método específico: Devuelve la plataforma o consola del videojuego (ej: PS5, PC, Xbox) [cite: 50, 73, 98]
+    def obtener_plataforma(self):
+        return self.plataforma
+
 
 # =========================================================================
-# 3. RUTAS DE LA PÁGINA
+# CLASE DE CONTROL: GESTOR DE INVENTARIO (RELACIÓN DE AGREGACIÓN) [cite: 109]
 # =========================================================================
 
+# Clase Controladora: Encapsula la gestión completa del catálogo de productos y reportes de la tienda [cite: 102, 109]
+class GestorInventario:
+    
+    # Método estático: Inserta un nuevo objeto (Película o Juego) de forma persistente en la base de datos [cite: 11, 82, 104]
+    @staticmethod
+    def agregar_producto(producto):
+        db.session.add(producto)
+        db.session.commit()
+
+    # Método estático: Remueve físicamente un producto del sistema utilizando su ID [cite: 11, 104]
+    @staticmethod
+    def eliminar_producto(id_prod):
+        prod = ProductoAlquiler.query.get(id_prod)
+        if prod:
+            db.session.delete(prod)
+            db.session.commit()
+            return True
+        return False
+
+    # Método estático: Realiza una búsqueda directa en el catálogo utilizando la clave primaria [cite: 72, 105]
+    @staticmethod
+    def buscar_producto_por_id(id_prod):
+        return ProductoAlquiler.query.get(id_prod)
+
+    # Método estático: Filtra los productos que tienen stock disponible para mostrar en la web del cliente [cite: 51, 106]
+    @staticmethod
+    def listar_disponibles(tipo_prod):
+        return ProductoAlquiler.query.filter_by(tipo=tipo_prod, alquilado=False).order_by(ProductoAlquiler.genero).all()
+
+    # Método estático: Filtra los artículos que se encuentran completamente rentados por los clientes [cite: 51, 107]
+    @staticmethod
+    def listar_alquilados(tipo_prod):
+        return ProductoAlquiler.query.filter_by(tipo=tipo_prod, alquilado=True).all()
+
+    # Método de negocio / Módulo Financiero (RF-05): Calcula las ganancias sumando el precio de lo alquilado [cite: 51, 79, 80, 108]
+    @staticmethod
+    def calcular_ingresos_estimados():
+        productos_rentados = ProductoAlquiler.query.filter_by(alquilado=True).all()
+        return sum(p.precio_alquiler for p in productos_rentados)
+
+
+# =========================================================================
+# 3. RUTAS DE LA APLICACIÓN (CONTROLADORES DE VISTAS WEB FLASK) [cite: 18, 22]
+# =========================================================================
+
+# Ruta principal (Home): Muestra el catálogo de películas y videojuegos disponibles al público [cite: 18, 24]
 @app.route('/')
 def inicio():
-    # Traemos todo para mostrarlo en la pantalla principal
-    lista_peliculas = Pelicula.query.all()
-    lista_juegos = Juego.query.all()
-    return render_template('inicio.html', peliculas=lista_peliculas, juegos=lista_juegos)
+    peliculas = GestorInventario.listar_disponibles('pelicula')
+    juegos = GestorInventario.listar_disponibles('juego')
+    return render_template('inicio.html', peliculas=peliculas, juegos=juegos)
 
-# --- LOGIN / REGISTRO / LOGOUT ---
 
+# Ruta de Autenticación: Procesa el formulario de inicio de sesión de usuarios y administradores [cite: 18, 24]
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email_f = request.form.get('email')
-        pass_f = request.form.get('password')
-        user = Usuario.query.filter_by(email=email_f, password=pass_f).first()
+        user = Usuario.autenticar(request.form.get('email'), request.form.get('password'))
         if user:
-            session['usuario_id'] = user.id
-            session['usuario_nombre'] = user.nombre
-            session['usuario_rol'] = user.rol
-            flash(f"¡Hola de nuevo, {user.nombre}!", "success") 
+            session['usuario_id'], session['usuario_nombre'], session['usuario_rol'] = user.id, user.nombre, user.rol
+            flash(f"¡Hola, {user.nombre}!", "success") 
             return redirect(url_for('inicio'))
-        flash("Email o contraseña incorrectos", "danger")
+        flash("Credenciales incorrectas", "danger")
     return render_template('login.html')
 
-@app.route('/registro', methods=['GET', 'POST'])
-def registro():
-    if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if Usuario.query.filter_by(email=email).first():
-            flash("Ese email ya está registrado.", "warning")
-            return redirect(url_for('registro'))
-            
-        nuevo = Usuario(nombre=nombre, email=email, password=password)
-        db.session.add(nuevo)
-        db.session.commit()
-        flash("¡Usuario creado con éxito! Ya podés iniciar sesión.", "success")
-        return redirect(url_for('login'))
-    return render_template('registro.html')
 
+# Ruta de Cierre de Sesión: Limpia las variables de entorno guardadas en las cookies del navegador
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('inicio'))
 
+
+# Ruta Operativa de Negocio: Ejecuta la acción inmediata de alquilar reduciendo el stock disponible [cite: 73, 77]
+@app.route('/alquilar/<int:prod_id>')
+def alquilar_item(prod_id):
+    producto = GestorInventario.buscar_producto_por_id(prod_id)
+    if producto and producto.alquilar():
+        flash(f"Alquilaste '{producto.titulo}' con éxito.", "success")
+    else:
+        flash("No hay stock disponible.", "danger")
+    return redirect(url_for('inicio'))
+
+
 # =========================================================================
-# 4. PANEL DE CONTROL (SOLO ADMIN) - PARA CARGAR STOCK
+# 4. PANEL DE CONTROL (ADMINISTRACIÓN DEL CATÁLOGO Y REPORTES) [cite: 72, 79]
 # =========================================================================
 
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'img')
-
-@app.route('/admin/dashboard', methods=['GET', 'POST']) # Habilitamos GET y POST
-@requiere_nivel(10) # Nivel admin
+# Ruta del Dashboard: Permite el ABM (Alta de productos) y visualiza los Reportes Financieros de la tienda [cite: 11, 18, 72, 79]
+@app.route('/admin/dashboard', methods=['GET', 'POST'])
 def dashboard():
-    # SI EL ADMIN ENVIÓ EL FORMULARIO DE CARGA (POST)
+    # Validación de Seguridad: Bloquea el acceso si el usuario activo no posee rol de administrador
+    if session.get('usuario_rol', 'cliente') != 'admin':
+        flash("Acceso denegado. Se requieren permisos de Administrador.", "danger")
+        return redirect(url_for('inicio'))
+
+    # Procesamiento del Formulario (Alta / Creación de Objetos) [cite: 18, 24]
     if request.method == 'POST':
-        tipo = request.form.get('tipo') # Recibe 'pelicula' o 'juego'
+        tipo_f = request.form.get('tipo') 
         titulo = request.form.get('titulo')
         precio = float(request.form.get('precio'))
         stock = int(request.form.get('stock', 1))
-        
-        # Procesamos la imagen de texto que viene del campo input text
-        nombre_imagen = request.form.get('imagen')
-        if not nombre_imagen or nombre_imagen.strip() == '':
-            nombre_imagen = "default.jpg"
+        genero = request.form.get('genero')
+        imagen = request.form.get('imagen') or "default.jpg"
 
-        # Guardamos en la tabla correspondiente según el select del HTML
-        if tipo == 'pelicula':
-            nuevo = Pelicula(titulo=titulo, precio=precio, stock=stock, imagen=nombre_imagen)
+        # Lógica de Polimorfismo / Instanciación según la selección del formulario [cite: 18, 73]
+        if tipo_f == 'pelicula':
+            nuevo = Pelicula(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=imagen, formato=request.form.get('plataforma'))
         else:
-            nuevo = Juego(titulo=titulo, precio=precio, stock=stock, imagen=nombre_imagen)
-            
-        db.session.add(nuevo)
-        db.session.commit()
-        flash(f"¡{tipo.capitalize()} '{titulo}' agregada al stock con éxito!", "success")
-        return redirect(url_for('dashboard')) # Recarga el panel limpio mostrando los nuevos totales
+            nuevo = Juego(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=imagen, plataforma=request.form.get('plataforma'))
 
-    # SI EL ADMIN SOLO ENTRÓ A MIRAR LA PÁGINA (GET)
-    total_pelis = Pelicula.query.count()
-    total_juegos = Juego.query.count()
-    total_users = Usuario.query.count()
-    return render_template('dashboard.html', u_total=total_users, p_total=total_pelis, j_total=total_juegos)
+        # Se delega el almacenamiento al Gestor del Inventario unificado [cite: 104]
+        GestorInventario.agregar_producto(nuevo)
+        
+        flash(f"¡{tipo_f.capitalize()} cargada correctamente!", "success")
+        return redirect(url_for('dashboard'))
 
+    # Carga de la vista (GET): Recolecta estadísticas globales e invoca el reporte de ingresos estimados (RF-05) [cite: 24, 79]
+    return render_template(
+        'dashboard.html', 
+        u_total=Usuario.query.count(), 
+        p_total=ProductoAlquiler.query.filter_by(tipo='pelicula').count(), 
+        j_total=ProductoAlquiler.query.filter_by(tipo='juego').count(), 
+        ingresos=GestorInventario.calcular_ingresos_estimados()
+    )
+    # =========================================================================
+# Nueva Ruta: Registro de Usuarios Clientes
+# =========================================================================
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    """ Procesa el formulario de creación de nuevas cuentas para Clientes """
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-# Dejamos esta ruta de auxilio por si la necesitas, apuntando a tu dashboard
-@app.route('/admin/nuevo_item', methods=['GET', 'POST'])
-@requiere_nivel(10)
-def nuevo_item():
-    return redirect(url_for('dashboard'))
+        # Validación simple para evitar correos duplicados
+        if Usuario.query.filter_by(email=email).first():
+            flash("El correo electrónico ya está registrado.", "danger")
+            return redirect(url_for('registro'))
+
+        # Instanciamos la clase Usuario y usamos su método .guardar()
+        nuevo_usuario = Usuario(nombre=nombre, email=email, password=password, rol='cliente')
+        nuevo_usuario.guardar()
+
+        flash("¡Cuenta creada con éxito! Ya podés iniciar sesión.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('registro.html')
+
 
 # =========================================================================
-# CREACIÓN AUTOMÁTICA DE TABLAS Y ADMIN INICIAL AL ARRANCAR
+# 5. INICIALIZACIÓN AUTOMÁTICA AL ARRANCAR EL SERVIDOR
 # =========================================================================
 with app.app_context():
-    db.create_all()  # Crea el archivo alquileres.db y las tablas automáticamente
-
-    # Forzamos la creación del administrador apenas arranca el servidor
-    existe_admin = Usuario.query.filter_by(email="admin@alquiler.com").first()
-    if not existe_admin:
-        admin = Usuario(
-            nombre="Admin", 
-            email="admin@alquiler.com", 
-            password="123", 
-            rol="admin"  # Rango máximo para que no entre como cliente común
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("¡Base de datos lista y Administrador Inicial generado con éxito!")
+    db.create_all()  # Crea las tablas físicas en la base de datos relacional si no existen [cite: 12, 83]
+    
+    # Registra una cuenta de Administrador por defecto la primera vez para asegurar el acceso al sistema [cite: 58]
+    if not Usuario.query.filter_by(email="admin@alquiler.com").first():
+        Usuario(nombre="Admin", email="admin@alquiler.com", password="123", rol="admin").guardar()
 
 if __name__ == '__main__':
     app.run(debug=True)
