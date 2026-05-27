@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Admin | Alquilando{% endblock %}
+
+{% block content %}
+    <section class="dashboard-section">
+        <div class="dashboard-header">
+            <div>
+                <p class="eyebrow">Administración</p>
+                <h1>Panel de control</h1>
+            </div>
+            <p class="dashboard-copy">Gestioná el inventario desde una interfaz centralizada y visualmente organizada.</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <article class="metric-card">
+                <span class="metric-label">Usuarios</span>
+                <strong class="metric-value">{{ u_total }}</strong>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">Películas</span>
+                <strong class="metric-value">{{ p_total }}</strong>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">Juegos</span>
+                <strong class="metric-value">{{ j_total }}</strong>
+            </article>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-copy-block">
+                <p class="eyebrow">Carga de stock</p>
+                <h2>Agregar nuevo ítem</h2>
+                <p>Subí películas o videojuegos con su precio, stock inicial y portada. Recordá guardar la imagen en la carpeta de recursos.</p>
+            </div>
+
+            <form class="auth-form" action="{{ url_for('dashboard') }}" method="POST">
+                <label for="tipo">Tipo de producto</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="pelicula">Película</option>
+                    <option value="juego">Videojuego</option>
+                </select>
+
+                <label for="titulo">Título del ítem</label>
+                <input id="titulo" type="text" name="titulo" placeholder="Ej: Matrix" required>
+
+                <label for="precio">Precio de alquiler</label>
+                <input id="precio" type="number" step="0.01" name="precio" placeholder="Ej: 450.50" required>
+
+                <label for="stock">Stock inicial</label>
+                <input id="stock" type="number" name="stock" placeholder="Ej: 5" required>
+
+                <label for="imagen">Nombre de la imagen</label>
+                <input id="imagen" type="text" name="imagen" placeholder="Ej: portada.png" required>
+                <p class="form-note">* Guardá la imagen en la carpeta <strong>static/img</strong>.</p>
+
+                <button class="btn btn-primary btn-full" type="submit">Cargar al inventario</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

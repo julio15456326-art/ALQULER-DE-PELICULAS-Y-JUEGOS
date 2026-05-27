@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio | Alquilando{% endblock %}
+
+{% block content %}
+    <section class="hero-section">
+        <div class="hero-copy">
+            <p class="eyebrow">🏠 Alquiler de películas y videojuegos</p>
+            <h1>Todo el entretenimiento que querés, en un solo lugar.</h1>
+            <p class="hero-text">
+                Descubrí un catálogo moderno con películas y juegos, precios claros y una interfaz pensada para una experiencia cómoda y visualmente atractiva.
+            </p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="#catalogo">Ver catálogo</a>
+                <a class="btn btn-secondary" href="{{ url_for('login') }}">Iniciar sesión</a>
+            </div>
+            <div class="hero-stats" aria-label="Estadísticas del catálogo">
+                <div class="stat-card">
+                    <strong>{{ peliculas|length }}</strong>
+                    <span>películas</span>
+                </div>
+                <div class="stat-card">
+                    <strong>{{ juegos|length }}</strong>
+                    <span>juegos</span>
+                </div>
+                <div class="stat-card">
+                    <strong>24/7</strong>
+                    <span>disponible</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+            <div class="hero-visual-card main-card">
+                <div class="card-top">✨ Nueva selección</div>
+                <h2>Destacados del mes</h2>
+                <p>Disfrutá de una experiencia premium con estrenos, clásicos y juegos de última generación.</p>
+            </div>
+            <div class="hero-visual-card mini-card">
+                <span>🎉</span>
+                <div>
+                    <strong>Stock actualizado</strong>
+                    <p>Inventario visible y organizado.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="catalog-section" id="catalogo">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Catálogo</p>
+                <h2>Películas</h2>
+            </div>
+            <p class="section-copy">Títulos para disfrutar en cualquier momento.</p>
+        </div>
+
+        <div class="item-grid">
+            {% for p in peliculas %}
+                <article class="item-card">
+                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
+                    <div class="item-content">
+                        <div class="item-topline">
+                            <span class="badge">Película</span>
+                            <span class="price-tag">${{ p.precio }}</span>
+                        </div>
+                        <h3>{{ p.titulo }}</h3>
+                        <p class="item-meta">Stock disponible: {{ p.stock }}</p>
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-state">No hay películas en el stock.</div>
+            {% endfor %}
+        </div>
+
+        <div class="section-heading section-heading-spaced">
+            <div>
+                <p class="eyebrow">Catálogo</p>
+                <h2>Videojuegos</h2>
+            </div>
+            <p class="section-copy">Explorá géneros, aventuras y clásicos.</p>
+        </div>
+
+        <div class="item-grid">
+            {% for j in juegos %}
+                <article class="item-card">
+                    <img src="{{ url_for('static', filename='img/' + j.imagen) }}" alt="{{ j.titulo }}">
+                    <div class="item-content">
+                        <div class="item-topline">
+                            <span class="badge">Juego</span>
+                            <span class="price-tag">${{ j.precio }}</span>
+                        </div>
+                        <h3>{{ j.titulo }}</h3>
+                        <p class="item-meta">Stock disponible: {{ j.stock }}</p>
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-state">No hay juegos en el stock.</div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
