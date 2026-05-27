@@ -45,54 +45,56 @@ class Usuario(db.Model):
 class ProductoAlquiler(db.Model):
     __tablename__ = 'productos_alquiler'
     
-    id = db.Column(db.Integer, primary_key=True)                 # Identificador único de cada artículo [cite: 50, 91]
-    titulo = db.Column(db.String(100), nullable=False)            # Título de la película o videojuego [cite: 50, 91]
-    genero = db.Column(db.String(50), nullable=True)              # Género para clasificación (ej: Acción, Terror) [cite: 50, 92]
-    alquilado = db.Column(db.Boolean, default=False)              # Estado lógico de disponibilidad [cite: 50, 74, 93]
-    precio_alquiler = db.Column(db.Float, nullable=False)         # Costo de renta del artículo [cite: 50, 94]
+    id = db.Column(db.Integer, primary_key=True)                 
+    titulo = db.Column(db.String(100), nullable=False)            
+    genero = db.Column(db.String(50), nullable=True)              
+    alquilado = db.Column(db.Boolean, default=False)              
+    precio_alquiler = db.Column(db.Float, nullable=False)         
     
-    # Atributos adicionales para la gestión interna de la aplicación web [cite: 18, 24]
+    # Atributos adicionales para la gestión interna de la aplicación web
     stock = db.Column(db.Integer, default=1)
     imagen = db.Column(db.String(100), default='default.jpg')
-    tipo = db.Column(db.String(50), nullable=False)               # Guarda textualmente 'pelicula' o 'juego' [cite: 50, 73]
+    tipo = db.Column(db.String(50), nullable=False)               
 
-    # Columnas específicas de las clases hijas (mapeadas mediante Herencia en Tabla Única) [cite: 109]
-    formato = db.Column(db.String(50), nullable=True)             # Atributo exclusivo de películas (ej: Blu-ray) [cite: 73, 100]
-    plataforma = db.Column(db.String(50), nullable=True)          # Atributo exclusivo de videojuegos (ej: PS5) [cite: 50, 73, 97]
+    # Columnas específicas de las clases hijas (mapeadas mediante Herencia)
+    formato = db.Column(db.String(50), nullable=True)             
+    plataforma = db.Column(db.String(50), nullable=True)          
 
-    # Método de negocio: Reduce el stock disponible y cambia el estado a "Alquilado" si corresponde [cite: 6, 74, 77, 95]
+    # SOLUCIÓN AL ERROR: El padre ahora sabe responder de forma segura a las llamadas del HTML
+    def obtener_formato(self):
+        """ Devuelve el formato si existe, ideal para evitar errores en las plantillas """
+        return self.formato if self.formato else "No aplica"
+
+    def obtener_plataforma(self):
+        """ Devuelve la plataforma si existe, garantizando compatibilidad en las vistas """
+        return self.plataforma if self.plataforma else "No aplica"
+
+    # Método de negocio: Reduce el stock disponible y cambia el estado a "Alquilado" si corresponde
     def alquilar(self):
         if self.stock > 0:
             self.stock -= 1
             if self.stock == 0:
-                self.alquilado = True                             # Cambia el estado a No Disponible [cite: 74, 77]
+                self.alquilado = True                             
             db.session.commit()
             return True
         return False
 
-    # Método de negocio: Incrementa el stock al retornar el artículo y lo vuelve a dejar disponible [cite: 6, 78, 96]
+    # Método de negocio: Incrementa el stock al retornar el artículo y lo vuelve a dejar disponible
     def devolver(self):
         self.stock += 1
-        self.alquilado = False                                    # El producto vuelve a estar libre para alquiler [cite: 78]
+        self.alquilado = False                                    
         db.session.commit()
         return True
 
 
-# SUBCLASE (CLASE HIJA): Modela las películas aplicando la regla de herencia "es un producto de alquiler" [cite: 109]
+# SUBCLASE (CLASE HIJA): Hereda del ProductoAlquiler genérico
 class Pelicula(ProductoAlquiler):
-    
-    # Método específico: Devuelve el formato físico o digital de la película (ej: DVD, Blu-ray, Streaming) [cite: 73, 101]
-    def obtener_formato(self):
-        return self.formato
+    pass
 
 
-# SUBCLASE (CLASE HIJA): Modela los videojuegos aplicando la regla de herencia "es un producto de alquiler" [cite: 109]
+# SUBCLASE (CLASE HIJA): Hereda del ProductoAlquiler genérico
 class Juego(ProductoAlquiler):
-    
-    # Método específico: Devuelve la plataforma o consola del videojuego (ej: PS5, PC, Xbox) [cite: 50, 73, 98]
-    def obtener_plataforma(self):
-        return self.plataforma
-
+    pass
 
 # =========================================================================
 # CLASE DE CONTROL: GESTOR DE INVENTARIO (RELACIÓN DE AGREGACIÓN) [cite: 109]
