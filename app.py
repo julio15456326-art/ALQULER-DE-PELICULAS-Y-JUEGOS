@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, url_for, session, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 import os
 
 app = Flask(__name__)
@@ -185,39 +186,59 @@ def alquilar_item(prod_id):
 
 
 # =========================================================================
-# 4. PANEL DE CONTROL (ADMINISTRACIÓN DEL CATÁLOGO Y REPORTES) [cite: 72, 79]
+# 4. PANEL DE CONTROL (ADMINISTRACIÓN DEL CATÁLOGO Y REPORTES)
 # =========================================================================
 
-# Ruta del Dashboard: Permite el ABM (Alta de productos) y visualiza los Reportes Financieros de la tienda [cite: 11, 18, 72, 79]
 @app.route('/admin/dashboard', methods=['GET', 'POST'])
 def dashboard():
-    # Validación de Seguridad: Bloquea el acceso si el usuario activo no posee rol de administrador
+    # Validación de Seguridad: Bloquea el acceso si no sos admin
     if session.get('usuario_rol', 'cliente') != 'admin':
         flash("Acceso denegado. Se requieren permisos de Administrador.", "danger")
         return redirect(url_for('inicio'))
 
-    # Procesamiento del Formulario (Alta / Creación de Objetos) [cite: 18, 24]
     if request.method == 'POST':
         tipo_f = request.form.get('tipo') 
         titulo = request.form.get('titulo')
         precio = float(request.form.get('precio'))
         stock = int(request.form.get('stock', 1))
         genero = request.form.get('genero')
-        imagen = request.form.get('imagen') or "default.jpg"
-
-        # Lógica de Polimorfismo / Instanciación según la selección del formulario [cite: 18, 73]
-        if tipo_f == 'pelicula':
-            nuevo = Pelicula(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=imagen, formato=request.form.get('plataforma'))
+        
+        # 1. CAPTURA DEL ARCHIVO DESDE LA VENTANA DE TU COMPUTADORA
+        file_imagen = request.files.get('imagen')
+        
+        if file_imagen and file_imagen.filename != '':
+            # Limpiamos el nombre original (ej: "foto de peli 1.jpg" -> "foto_de_peli_1.jpg")
+            nombre_imagen = secure_filename(file_imagen.filename)
+            
+            # Construimos la ruta de la carpeta de destino (static/img)
+            carpeta_destino = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+            
+            # CONTROL DE SEGURIDAD: Si la carpeta "static/img" no existe en tu compu, la creamos al vuelo
+            if not os.path.exists(carpeta_destino):
+                os.makedirs(carpeta_destino)
+            
+            # Definimos la ruta completa con el nombre del archivo incluido
+            ruta_final_archivo = os.path.join(carpeta_destino, nombre_imagen)
+            
+            # Guardamos físicamente el archivo seleccionado en tu computadora
+            file_imagen.save(ruta_final_archivo)
         else:
-            nuevo = Juego(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=imagen, plataforma=request.form.get('plataforma'))
+            # Si el administrador no seleccionó ningún archivo, usa una por defecto
+            nombre_imagen = "default.jpg"
 
-        # Se delega el almacenamiento al Gestor del Inventario unificado [cite: 104]
+        # 2. POLIMORFISMO: Instanciamos según corresponda pasándole el nombre de la imagen guardada
+        if tipo_f == 'pelicula':
+            nuevo = Pelicula(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=nombre_imagen, formato=request.form.get('plataforma'))
+        else:
+            nuevo = Juego(titulo=titulo, precio_alquiler=precio, stock=stock, genero=genero, tipo=tipo_f, imagen=nombre_imagen, plataforma=request.form.get('plataforma'))
+
+        # Guardamos en la base de datos usando el Gestor de Inventario
         GestorInventario.agregar_producto(nuevo)
         
-        flash(f"¡{tipo_f.capitalize()} cargada correctamente!", "success")
+        flash(f"¡{tipo_f.capitalize()} cargada con éxito! Imagen guardada en el servidor.", "success")
         return redirect(url_for('dashboard'))
 
-    # Carga de la vista (GET): Recolecta estadísticas globales e invoca el reporte de ingresos estimados (RF-05) [cite: 24, 79]
+    # Método GET: Muestra el panel con el reporte financiero unificado (RF-05)
     return render_template(
         'dashboard.html', 
         u_total=Usuario.query.count(), 
@@ -225,7 +246,6 @@ def dashboard():
         j_total=ProductoAlquiler.query.filter_by(tipo='juego').count(), 
         ingresos=GestorInventario.calcular_ingresos_estimados()
     )
-    # =========================================================================
 # Nueva Ruta: Registro de Usuarios Clientes
 # =========================================================================
 @app.route('/registro', methods=['GET', 'POST'])

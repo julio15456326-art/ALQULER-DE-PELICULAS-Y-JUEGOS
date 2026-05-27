@@ -20,7 +20,7 @@
             {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('dashboard') }}" method="POST" style="display: flex; flex-direction: column; gap: 15px; width: 350px;">
+        <form action="{{ url_for('dashboard') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px; width: 350px;">
             
             <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Tipo de producto:</label>
             <select name="tipo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
@@ -41,8 +41,9 @@
             
             <input type="number" name="stock" placeholder="Cantidad de stock inicial" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
             
-            <input type="text" name="imagen" placeholder="Nombre de la imagen (ej: portada.png)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            <span style="color: #555; font-size: 0.8rem; margin-top: -10px;">* Recordá guardar la foto físicamente en static/img/</span>
+            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Seleccionar Portada:</label>
+            <input type="file" name="imagen" accept="image/*" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
+            <span style="color: #555; font-size: 0.8rem; margin-top: -10px;">* Al hacer clic se abrirán tus carpetas de Windows de forma automática.</span>
 
             <button type="submit" style="padding: 12px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;">Cargar al Inventario</button>
         </form>
