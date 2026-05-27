@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Alquilando - Panel de Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+
+    <main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+        
+        <h2>Panel de Administración - Agregar Stock</h2>
+        <p style="color: #888; margin-bottom: 30px;">Carga de nuevas películas o videojuegos al sistema</p>
+
+        {% with mensajes = get_flashed_messages() %}
+            {% if mensajes %}
+                {% for m in mensajes %}
+                    <p style="color: #00ff66; font-weight: bold; margin-bottom: 20px;">{{ m }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('dashboard') }}" method="POST" style="display: flex; flex-direction: column; gap: 15px; width: 350px;">
+            
+            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Tipo de producto:</label>
+            <select name="tipo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
+                <option value="pelicula">Película</option>
+                <option value="juego">Videojuego</option>
+            </select>
+
+            <input type="text" name="titulo" placeholder="Título del ítem" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            
+            <input type="number" step="0.01" name="precio" placeholder="Precio de alquiler (ej: 450.50)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            
+            <input type="number" name="stock" placeholder="Cantidad de stock inicial" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            
+            <input type="text" name="imagen" placeholder="Nombre de la imagen (ej: portada.png)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            <span style="color: #555; font-size: 0.8rem; margin-top: -10px;">* Recordá guardar la foto físicamente en static/img/</span>
+
+            <button type="submit" style="padding: 12px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;">Cargar al Inventario</button>
+        </form>
+
+        <p style="margin-top: 40px; font-size: 0.9rem;"><a href="{{ url_for('inicio') }}" style="color: #888; text-decoration: none;">← Volver al Inicio de la Web</a></p>
+    </main>
+
+</body>
+</html>

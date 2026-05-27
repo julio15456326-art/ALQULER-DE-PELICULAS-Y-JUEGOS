@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Alquilando</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+
+    <section class="pantalla-principal">
+        <nav style="position: absolute; top: 20px; right: 20px; display: flex; gap: 20px;">
+            {% if session.get('usuario_nombre') %}
+                <span style="color: #888;">Hola, {{ session['usuario_nombre'] }}</span>
+                {% if session.get('usuario_rol') == 'admin' %}
+                    <a href="{{ url_for('dashboard') }}" style="color: #fff; text-decoration: none; font-weight: bold;">Panel Admin</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" style="color: #ff4444; text-decoration: none;">Cerrar Sesión</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" style="color: #fff; text-decoration: none;">Iniciar Sesión</a>
+                <a href="{{ url_for('registro') }}" style="color: #fff; text-decoration: none; border: 1px solid #fff; padding: 5px 10px; border-radius: 4px;">Registrarse</a>
+            {% endif %}
+        </nav>
+        <h1>Alquiler de Pelis Y juegos</h1>
+    </section>
+
+    <main class="catalogo">
+        
+        <h2>Películas</h2>
+        <div class="lista-items">
+            {% for p in peliculas %}
+                <div class="item">
+                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
+                    <h3>{{ p.titulo }}</h3>
+                    <p>Precio: ${{ p.precio }} | Stock: {{ p.stock }}</p>
+                </div>
+            {% else %}
+                <p>No hay películas en el stock.</p>
+            {% endfor %}
+        </div>
+
+        <h2>Videojuegos</h2>
+        <div class="lista-items">
+            {% for j in juegos %}
+                <div class="item">
+                    <img src="{{ url_for('static', filename='img/' + j.imagen) }}" alt="{{ j.titulo }}">
+                    <h3>{{ j.titulo }}</h3>
+                    <p>Precio: ${{ j.precio }} | Stock: {{ j.stock }}</p>
+                </div>
+            {% else %}
+                <p>No hay juegos en el stock.</p>
+            {% endfor %}
+        </div>
+
+    </main>
+
+</body>
+</html>

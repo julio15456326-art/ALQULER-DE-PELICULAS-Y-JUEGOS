@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Alquilando - Registrarse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+
+    <main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        
+        <h2>Crear una nueva cuenta</h2>
+
+        {% with mensajes = get_flashed_messages() %}
+            {% if mensajes %}
+                {% for m in mensajes %}
+                    <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">{{ m }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('registro') }}" method="POST" style="display: flex; flex-direction: column; gap: 15px; width: 300px;">
+            <input type="text" name="nombre" placeholder="Nombre completo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            <input type="email" name="email" placeholder="Correo electrónico" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            <input type="password" name="password" placeholder="Contraseña" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
+            
+            <button type="submit" style="padding: 10px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Registrarse</button>
+        </form>
+
+        <p style="margin-top: 20px; font-size: 0.9rem;"><a href="{{ url_for('login') }}" style="color: #888; text-decoration: none;">¿Ya tenés cuenta? Iniciá sesión acá</a></p>
+    </main>
+
+</body>
+</html>
