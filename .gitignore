@@ -1,0 +1,4 @@
+__pycache__/
+.vscode/
+alquileres.db
+*.py[cod]

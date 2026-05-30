@@ -1,62 +1,61 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Alquilando - Panel de Control</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
-        
-        <h2>Panel de Administración - Agregar Stock</h2>
-        <p style="color: #888; margin-bottom: 30px;">Carga de nuevas películas o videojuegos al sistema</p>
+{% block title %}Panel Admin | Alquilando{% endblock %}
 
-        {% with mensajes = get_flashed_messages() %}
-            {% if mensajes %}
-                {% for m in mensajes %}
-                    <p style="color: #00ff66; font-weight: bold; margin-bottom: 20px;">{{ m }}</p>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form action="{{ url_for('dashboard') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px; width: 350px;">
-            
-            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Tipo de producto:</label>
-            <select name="tipo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
-                <option value="pelicula">Película</option>
-                <option value="juego">Videojuego</option>
-            </select>
-
-            <input type="text" name="titulo" placeholder="Título del ítem" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <input type="text" name="genero" placeholder="Género (ej: Acción, Terror, Suspenso)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <input type="text" name="plataforma" placeholder="Plataforma o Formato (ej: PS5, PC, Blu-ray)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-                <span style="color: #666; font-size: 0.75rem;">* Poné la consola para juegos, o el formato físico para películas.</span>
+{% block content %}
+    <section class="dashboard-section">
+        <div class="dashboard-header">
+            <div>
+                <p class="eyebrow">Administración</p>
+                <h1>Panel de control</h1>
             </div>
-            
-            <input type="number" step="0.01" name="precio" placeholder="Precio de alquiler (ej: 450.50)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <input type="number" name="stock" placeholder="Cantidad de stock inicial" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Seleccionar Portada:</label>
-            <input type="file" name="imagen" accept="image/*" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
-            <span style="color: #555; font-size: 0.8rem; margin-top: -10px;">* Al hacer clic se abrirán tus carpetas de Windows de forma automática.</span>
+            <p class="dashboard-copy">Gestioná el inventario desde una interfaz centralizada y visualmente organizada.</p>
+        </div>
 
-            <button type="submit" style="padding: 12px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;">Cargar al Inventario</button>
-        </form>
+        <div class="dashboard-stats">
+            <article class="metric-card">
+                <span class="metric-label">Usuarios</span>
+                <strong class="metric-value">{{ u_total }}</strong>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">Películas</span>
+                <strong class="metric-value">{{ p_total }}</strong>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">Juegos</span>
+                <strong class="metric-value">{{ j_total }}</strong>
+            </article>
+        </div>
 
-        {% if ingresos is defined %}
-            <div style="margin-top: 30px; text-align: center; border-top: 1px solid #222; padding-top: 20px; width: 350px;">
-                <h3 style="color: #ccc; font-size: 1.1rem; margin-bottom: 5px;">Reporte de Control Financiero</h3>
-                <p style="color: #00ff66; font-size: 1.2rem; font-weight: bold; margin: 0;">Ingresos Estimados: ${{ "%.2f"|format(ingresos) }}</p>
+        <div class="admin-panel">
+            <div class="admin-copy-block">
+                <p class="eyebrow">Carga de stock</p>
+                <h2>Agregar nuevo ítem</h2>
+                <p>Subí películas o videojuegos con su precio, stock inicial y portada. Recordá guardar la imagen en la carpeta de recursos.</p>
             </div>
-        {% endif %}
 
-        <p style="margin-top: 40px; font-size: 0.9rem;"><a href="{{ url_for('inicio') }}" style="color: #888; text-decoration: none;">← Volver al Inicio de la Web</a></p>
-    </main>
+            <form class="auth-form" action="{{ url_for('dashboard') }}" method="POST">
+                <label for="tipo">Tipo de producto</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="pelicula">Película</option>
+                    <option value="juego">Videojuego</option>
+                </select>
 
-</body>
-</html>
+                <label for="titulo">Título del ítem</label>
+                <input id="titulo" type="text" name="titulo" placeholder="Ej: Matrix" required>
+
+                <label for="precio">Precio de alquiler</label>
+                <input id="precio" type="number" step="0.01" name="precio" placeholder="Ej: 450.50" required>
+
+                <label for="stock">Stock inicial</label>
+                <input id="stock" type="number" name="stock" placeholder="Ej: 5" required>
+
+                <label for="imagen">Nombre de la imagen</label>
+                <input id="imagen" type="text" name="imagen" placeholder="Ej: portada.png" required>
+                <p class="form-note">* Guardá la imagen en la carpeta <strong>static/img</strong>.</p>
+
+                <button class="btn btn-primary btn-full" type="submit">Cargar al inventario</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

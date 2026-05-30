@@ -1,34 +1,28 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Alquilando - Registrarse</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        
-        <h2>Crear una nueva cuenta</h2>
+{% block title %}Registrarse | Alquilando{% endblock %}
 
-        {% with mensajes = get_flashed_messages() %}
-            {% if mensajes %}
-                {% for m in mensajes %}
-                    <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">{{ m }}</p>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block content %}
+    <section class="auth-section">
+        <div class="auth-panel">
+            <p class="eyebrow">Registro</p>
+            <h1>Crear una cuenta</h1>
+            <p class="auth-copy">Registrate para guardar tu acceso y aprovechar el catálogo con una experiencia más personalizada.</p>
 
-        <form action="{{ url_for('registro') }}" method="POST" style="display: flex; flex-direction: column; gap: 15px; width: 300px;">
-            <input type="text" name="nombre" placeholder="Nombre completo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            <input type="email" name="email" placeholder="Correo electrónico" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            <input type="password" name="password" placeholder="Contraseña" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <button type="submit" style="padding: 10px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Registrarse</button>
-        </form>
+            <form class="auth-form" action="{{ url_for('registro') }}" method="POST">
+                <label for="nombre">Nombre completo</label>
+                <input id="nombre" type="text" name="nombre" placeholder="Tu nombre" required>
 
-        <p style="margin-top: 20px; font-size: 0.9rem;"><a href="{{ url_for('login') }}" style="color: #888; text-decoration: none;">¿Ya tenés cuenta? Iniciá sesión acá</a></p>
-    </main>
+                <label for="email">Correo electrónico</label>
+                <input id="email" type="email" name="email" placeholder="tuemail@ejemplo.com" required>
 
-</body>
-</html>
+                <label for="password">Contraseña</label>
+                <input id="password" type="password" name="password" placeholder="••••••••" required>
+
+                <button class="btn btn-primary btn-full" type="submit">Registrarse</button>
+            </form>
+
+            <p class="auth-link">¿Ya tenés cuenta? <a href="{{ url_for('login') }}">Iniciá sesión</a></p>
+        </div>
+    </section>
+{% endblock %}
