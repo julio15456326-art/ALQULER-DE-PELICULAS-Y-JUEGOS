@@ -1,62 +1,388 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Alquilando - Panel de Control</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
+{% block titulo %}Panel de Control — Administración{% endblock %}
 
-    <main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
-        
-        <h2>Panel de Administración - Agregar Stock</h2>
-        <p style="color: #888; margin-bottom: 30px;">Carga de nuevas películas o videojuegos al sistema</p>
+{% block hero %}
+<div class="panel-header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.5rem;">🎬</span>
+        <div>
+            <span style="font-size: 1.1rem;">Panel de Administración</span><br>
+            <span class="texto-gris" style="font-size: 0.78rem;">Sistema de Alquiler · Vista de Control</span>
+        </div>
+    </div>
+    <nav style="display: flex; gap: 16px; align-items: center;">
+        <a href="{{ url_for('inicio') }}" class="texto-claro">
+            <i class="fas fa-store"></i> Ver Catálogo
+        </a>
+        <a href="{{ url_for('logout') }}" class="nav-peligro" style="font-weight: bold;">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </a>
+    </nav>
+</div>
+{% endblock %}
 
-        {% with mensajes = get_flashed_messages() %}
-            {% if mensajes %}
-                {% for m in mensajes %}
-                    <p style="color: #00ff66; font-weight: bold; margin-bottom: 20px;">{{ m }}</p>
-                {% endfor %}
+{% block contenido %}
+<main style="max-width: 1300px; margin: 30px auto; padding: 0 24px;">
+
+    <!-- STAT CARDS -->
+    <div style="display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap;">
+        <div class="stat-card verde">
+            <h3>💰 Ingresos Estimados</h3>
+            <p class="texto-verde">${{ "%.2f"|format(ingresos) }}</p>
+        </div>
+        <div class="stat-card azul">
+            <h3>👥 Clientes Registrados</h3>
+            <p>{{ u_total - 1 }}</p>
+        </div>
+        <div class="stat-card naranja">
+            <h3>🎬 Películas en Catálogo</h3>
+            <p>{{ p_total }}</p>
+        </div>
+        <div class="stat-card rojo">
+            <h3>🎮 Videojuegos en Catálogo</h3>
+            <p>{{ j_total }}</p>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div style="display: flex; gap: 12px; border-bottom: 1px solid #333; padding-bottom: 16px; flex-wrap: wrap;">
+        <button class="tab-btn active" onclick="cambiarPestana('solicitudes', this)">
+            🔔 Solicitudes
+            {% set total_pendientes = solicitudes|length + devoluciones|length %}
+            {% if total_pendientes > 0 %}
+                <span class="badge-tab">{{ total_pendientes }}</span>
             {% endif %}
-        {% endwith %}
-
-        <form action="{{ url_for('dashboard') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px; width: 350px;">
-            
-            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Tipo de producto:</label>
-            <select name="tipo" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
-                <option value="pelicula">Película</option>
-                <option value="juego">Videojuego</option>
-            </select>
-
-            <input type="text" name="titulo" placeholder="Título del ítem" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <input type="text" name="genero" placeholder="Género (ej: Acción, Terror, Suspenso)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <input type="text" name="plataforma" placeholder="Plataforma o Formato (ej: PS5, PC, Blu-ray)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-                <span style="color: #666; font-size: 0.75rem;">* Poné la consola para juegos, o el formato físico para películas.</span>
-            </div>
-            
-            <input type="number" step="0.01" name="precio" placeholder="Precio de alquiler (ej: 450.50)" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <input type="number" name="stock" placeholder="Cantidad de stock inicial" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px;">
-            
-            <label style="color: #ccc; font-size: 0.9rem; margin-bottom: -5px;">Seleccionar Portada:</label>
-            <input type="file" name="imagen" accept="image/*" required style="padding: 10px; background: #111; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer;">
-            <span style="color: #555; font-size: 0.8rem; margin-top: -10px;">* Al hacer clic se abrirán tus carpetas de Windows de forma automática.</span>
-
-            <button type="submit" style="padding: 12px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;">Cargar al Inventario</button>
-        </form>
-
-        {% if ingresos is defined %}
-            <div style="margin-top: 30px; text-align: center; border-top: 1px solid #222; padding-top: 20px; width: 350px;">
-                <h3 style="color: #ccc; font-size: 1.1rem; margin-bottom: 5px;">Reporte de Control Financiero</h3>
-                <p style="color: #00ff66; font-size: 1.2rem; font-weight: bold; margin: 0;">Ingresos Estimados: ${{ "%.2f"|format(ingresos) }}</p>
-            </div>
+        </button>
+        {% if es_admin %}
+        <button class="tab-btn" onclick="cambiarPestana('usuarios', this)">👥 Gestionar Usuarios</button>
         {% endif %}
+        <button class="tab-btn" onclick="cambiarPestana('productos', this)">📦 Gestionar Productos</button>
+        {% if es_admin %}
+        <button class="tab-btn" onclick="cambiarPestana('ganancias', this)">📈 Historial de Alquileres</button>
+        {% endif %}
+    </div>
 
-        <p style="margin-top: 40px; font-size: 0.9rem;"><a href="{{ url_for('inicio') }}" style="color: #888; text-decoration: none;">← Volver al Inicio de la Web</a></p>
-    </main>
+    <!-- ══ TAB: SOLICITUDES ══ -->
+    <div id="solicitudes" class="tab-content active">
 
-</body>
-</html>
+        <h2 class="subtitulo-seccion" style="margin-bottom: 5px;">🔔 Solicitudes Pendientes</h2>
+        <p class="texto-apoyo">Alquileres y devoluciones que esperan tu confirmación.</p>
+
+        <!-- Nuevos alquileres -->
+        <h3 class="subtitulo-seccion" style="color: #ff9900;">⏳ Nuevos Alquileres por Confirmar</h3>
+        <div class="caja-datos">
+            {% if solicitudes %}
+                <table class="tabla-panel">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Cliente</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in solicitudes %}
+                        <tr>
+                            <td style="font-weight: bold;">{{ s.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ s.tipo_producto }}</td>
+                            <td>
+                                <span style="font-weight: bold;">{{ s.usuario.nombre }}</span><br>
+                                <span class="texto-gris" style="font-size: 0.8rem;">{{ s.usuario.email }}</span>
+                            </td>
+                            <td style="text-align: center; white-space: nowrap;">
+                                <a href="{{ url_for('confirmar_alquiler', prod_id=s.id) }}" class="btn-accion ok">
+                                    <i class="fas fa-check"></i> Confirmar
+                                </a>
+                                <a href="{{ url_for('rechazar_alquiler', prod_id=s.id) }}"
+                                   onclick="return confirm('¿Rechazar la solicitud de {{ s.usuario.nombre }}?');"
+                                   class="btn-accion peligro">
+                                    <i class="fas fa-times"></i> Rechazar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="texto-vacio">No hay alquileres pendientes de confirmación.</p>
+            {% endif %}
+        </div>
+
+        <!-- Devoluciones -->
+        <h3 class="subtitulo-seccion" style="color: #1a73e8;">📦 Devoluciones por Confirmar</h3>
+        <div class="caja-datos">
+            {% if devoluciones %}
+                <table class="tabla-panel">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Cliente</th>
+                            <th style="text-align: center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in devoluciones %}
+                        <tr>
+                            <td style="font-weight: bold;">{{ d.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ d.tipo_producto }}</td>
+                            <td>
+                                <span style="font-weight: bold;">{{ d.usuario.nombre }}</span><br>
+                                <span class="texto-gris" style="font-size: 0.8rem;">{{ d.usuario.email }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="{{ url_for('confirmar_devolucion', prod_id=d.id) }}" class="btn-accion ok">
+                                    <i class="fas fa-box-open"></i> Confirmar Devolución
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="texto-vacio">No hay devoluciones pendientes de confirmación.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ══ TAB: USUARIOS (solo admin) ══ -->
+    {% if es_admin %}
+    <div id="usuarios" class="tab-content">
+        <div class="caja-header">
+            <h2 class="subtitulo-seccion">👥 Control de Clientes</h2>
+            <a href="{{ url_for('administrar_crear_usuario') }}" class="btn-accion editar">
+                <i class="fas fa-user-plus"></i> Crear Empleado / Admin
+            </a>
+        </div>
+
+        {% if usuarios %}
+            <table class="tabla-panel">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Estado</th>
+                        <th>Alquileres activos</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <td class="texto-gris">{{ loop.index }}</td>
+                        <td style="font-weight: bold;">{{ u.nombre }}</td>
+                        <td class="texto-claro">{{ u.email }}</td>
+                        <td>
+                            {% if u.bloqueado %}
+                                <span class="badge bloqueado">🚫 Suspendido</span>
+                            {% else %}
+                                <span class="badge activo">✔ Activo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.alquileres|length > 0 %}
+                                <span class="badge espera">{{ u.alquileres|length }} en mano</span>
+                            {% else %}
+                                <span class="texto-gris">Ninguno</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="{{ url_for('administrar_editar_usuario', user_id=u.id) }}" class="btn-accion editar">
+                                <i class="fas fa-pen"></i> Editar
+                            </a>
+                            <a href="{{ url_for('administrar_bloqueo', user_id=u.id) }}"
+                               class="btn-accion {% if u.bloqueado %}ok{% else %}advertir{% endif %}">
+                                {% if u.bloqueado %}
+                                    <i class="fas fa-lock-open"></i> Activar
+                                {% else %}
+                                    <i class="fas fa-lock"></i> Bloquear
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('administrar_eliminar_usuario', user_id=u.id) }}"
+                               onclick="return confirm('¿Eliminar a {{ u.nombre }}? Se liberarán sus alquileres.');"
+                               class="btn-accion peligro">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="texto-vacio">No hay clientes registrados todavía.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ══ TAB: PRODUCTOS ══ -->
+    <div id="productos" class="tab-content">
+        <div style="display: flex; gap: 36px; flex-wrap: wrap;">
+
+            <!-- FORMULARIO ALTA -->
+            <div class="caja-formulario" style="flex: 1; min-width: 290px;">
+                <h3><i class="fas fa-plus-circle texto-verde"></i> Añadir Producto</h3>
+                <form action="{{ url_for('dashboard') }}" method="POST" enctype="multipart/form-data">
+                    <div class="campo">
+                        <label>Tipo:</label>
+                        <select name="tipo">
+                            <option value="pelicula">🎬 Película</option>
+                            <option value="juego">🎮 Videojuego</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Título:</label>
+                        <input type="text" name="titulo" required>
+                    </div>
+                    <div class="campo">
+                        <label>Género:</label>
+                        <input type="text" name="genero">
+                    </div>
+                    <div class="fila-doble">
+                        <div class="campo">
+                            <label>Precio ($):</label>
+                            <input type="number" step="0.01" name="precio" required>
+                        </div>
+                        <div class="campo">
+                            <label>Stock:</label>
+                            <input type="number" name="stock" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label>Formato / Plataforma:</label>
+                        <input type="text" name="especifico" placeholder="Ej: BluRay o PS5">
+                    </div>
+                    <div class="campo">
+                        <label>Imagen:</label>
+                        <input type="file" name="imagen" class="texto-claro">
+                    </div>
+                    <button type="submit" class="btn-formulario">Cargar en Inventario</button>
+                </form>
+            </div>
+
+            <!-- TABLA INVENTARIO -->
+            <div style="flex: 2; min-width: 420px;">
+                <div class="caja-header">
+                    <h3 class="subtitulo-seccion">Inventario Actual</h3>
+                    <span class="texto-gris" style="font-size: 0.85rem;">{{ productos|length }} productos</span>
+                </div>
+                <table class="tabla-panel">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>En Espera</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in productos %}
+                        <tr>
+                            <td style="font-weight: bold;">{{ p.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">
+                                {% if p.tipo_producto == 'pelicula' %}🎬{% else %}🎮{% endif %}
+                                {{ p.tipo_producto }}
+                            </td>
+                            <td class="texto-verde">${{ "%.2f"|format(p.precio_alquiler) }}</td>
+                            <td>
+                                <form action="{{ url_for('administrar_editar_stock', prod_id=p.id) }}" method="POST" class="stock-form">
+                                    <input type="number" name="nuevo_stock" value="{{ p.stock }}" min="0" class="stock-input">
+                                    <button type="submit" class="btn-save-stock" title="Guardar">💾</button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if p.en_espera|length > 0 %}
+                                    <span class="badge espera">⏳ {{ p.en_espera|length }}</span>
+                                {% else %}
+                                    <span class="texto-gris">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; white-space: nowrap;">
+                                <a href="{{ url_for('administrar_editar_producto', prod_id=p.id) }}" class="btn-accion editar">
+                                    <i class="fas fa-pen"></i> Editar
+                                </a>
+                                <a href="{{ url_for('administrar_eliminar_producto', prod_id=p.id) }}"
+                                   onclick="return confirm('¿Eliminar {{ p.titulo }}?');"
+                                   class="btn-accion peligro">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══ TAB: HISTORIAL (solo admin) ══ -->
+    {% if es_admin %}
+    <div id="ganancias" class="tab-content">
+        <h2 class="subtitulo-seccion">📋 Alquileres en Circulación</h2>
+        <p class="texto-apoyo">
+            Auditoría en tiempo real · Los ítems en rojo superaron el plazo de 7 días.
+        </p>
+
+        {% if alquileres %}
+            <table class="tabla-panel">
+                <thead>
+                    <tr>
+                        <th>Artículo</th>
+                        <th>Tipo</th>
+                        <th>Cliente</th>
+                        <th>Fecha Salida</th>
+                        <th>Fecha Límite</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alquileres %}
+                        {% set vencido = a.esta_vencido() %}
+                        <tr {% if vencido %}style="background: rgba(255,68,68,0.05);"{% endif %}>
+                            <td style="font-weight: bold;">{{ a.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ a.tipo_producto }}</td>
+                            <td>
+                                <span style="font-weight: bold;">{{ a.usuario.nombre }}</span><br>
+                                <span class="texto-gris" style="font-size: 0.8rem;">{{ a.usuario.email }}</span>
+                            </td>
+                            <td class="texto-claro" style="font-size: 0.85rem;">
+                                {{ a.fecha_alquiler.strftime('%d/%m/%Y') if a.fecha_alquiler }}
+                            </td>
+                            <td class="texto-claro" style="font-size: 0.85rem;">
+                                {{ a.fecha_vencimiento.strftime('%d/%m/%Y') if a.fecha_vencimiento }}
+                            </td>
+                            <td>
+                                {% if vencido %}
+                                    <span class="badge vencido">⚠️ Vencido</span>
+                                {% else %}
+                                    <span class="badge alquiler-ok">✔ En término</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="texto-vacio">No hay artículos alquilados en circulación.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</main>
+
+<script>
+    function cambiarPestana(idPestana, boton) {
+        // Ocultar todos los contenidos de las pestañas
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // Desactivar todos los botones
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Activar la pestaña y el botón correspondiente
+        document.getElementById(idPestana).classList.add('active');
+        boton.classList.add('active');
+    }
+</script>
+{% endblock %}

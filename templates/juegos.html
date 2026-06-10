@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-
-{% block titulo %}Alquilando — Inicio{% endblock %}
+{% block titulo %}Alquilando — Videojuegos{% endblock %}
 
 {% block hero %}
 <section class="pantalla-principal">
@@ -17,44 +16,13 @@
             <a href="{{ url_for('registro') }}" style="border: 1px solid #fff; padding: 5px 10px; border-radius: 4px;">Registrarse</a>
         {% endif %}
     </nav>
-    <h1>Alquiler de Pelis y Juegos</h1>
+    <h1>Catálogo de Videojuegos</h1>
 </section>
 {% endblock %}
 
 {% block contenido %}
 <main class="catalogo">
-
-    <h2 class="titulo-seccion">Películas</h2>
-    <div class="lista-items">
-        {% for p in peliculas %}
-            <div class="item">
-                <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
-                <h3>{{ p.titulo }}</h3>
-                <p>Género: {{ p.genero }}</p>
-                <p>{{ p.obtener_especifico() }}</p>
-                <p>
-                    {% if p.stock > 0 %}
-                        <span class="estado-disponible">✔ Disponible (Stock: {{ p.stock }})</span>
-                    {% else %}
-                        <span class="estado-sin-stock">⏳ Sin stock (Reserva disponible)</span>
-                    {% endif %}
-                </p>
-                <p class="precio">Precio: ${{ "%.2f"|format(p.precio_alquiler) }}</p>
-                <a href="{{ url_for('alquilar_item', prod_id=p.id) }}"
-                   class="btn-alquilar {% if p.stock > 0 %}disponible{% else %}reserva{% endif %}">
-                    {% if p.stock > 0 %}Solicitar{% else %}Reservar (En Espera){% endif %}
-                </a>
-            </div>
-        {% else %}
-            <p class="texto-vacio">No hay películas en el stock.</p>
-        {% endfor %}
-    </div>
-
-    <div class="centrado" style="margin-bottom: 40px;">
-        <a href="{{ url_for('ver_peliculas') }}" class="btn-volver">Ver todas las películas →</a>
-    </div>
-
-    <h2 class="titulo-seccion" style="margin-top: 20px;">Videojuegos</h2>
+    <h2 class="titulo-seccion">Todos los Videojuegos disponibles</h2>
     <div class="lista-items">
         {% for j in juegos %}
             <div class="item">
@@ -76,13 +44,12 @@
                 </a>
             </div>
         {% else %}
-            <p class="texto-vacio">No hay juegos en el stock.</p>
+            <p class="texto-vacio">No hay videojuegos registrados.</p>
         {% endfor %}
     </div>
 
-    <div class="centrado" style="margin-bottom: 40px;">
-        <a href="{{ url_for('ver_juegos') }}" class="btn-volver">Ver todos los videojuegos →</a>
+    <div class="separador centrado">
+        <a href="{{ url_for('inicio') }}" class="btn-formulario" style="padding: 12px 28px; display: inline-block;">← Volver al Inicio</a>
     </div>
-
 </main>
 {% endblock %}

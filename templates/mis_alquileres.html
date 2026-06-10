@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Alquileres y Reservas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <section class="pantalla-principal">
+        <nav style="position: absolute; top: 20px; right: 20px; display: flex; gap: 20px;">
+            <span style="color: #888;">Hola, {{ session['usuario_nombre'] }}</span>
+            <a href="{{ url_for('inicio') }}" style="color: #fff; text-decoration: none; font-weight: bold;">Inicio</a>
+            <a href="{{ url_for('logout') }}" style="color: #ff4444; text-decoration: none;">Cerrar Sesión</a>
+        </nav>
+        <h1>Mi Espacio Personal</h1>
+    </section>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div style="width: 80%; margin: 20px auto; text-align: center;">
+                {% for categoria, m in mensajes %}
+                    <p style="color: {% if categoria == 'success' %}#00ff66{% else %}#ff4444{% endif %}; font-weight: bold;">{{ m }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="catalogo" style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+        
+        <h2>Mis Alquileres Activos</h2>
+        <div style="background: #0b0b0b; border: 1px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 40px;">
+            {% if alquileres %}
+                <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #333; color: #aaa;">
+                            <th style="padding: 10px;">Item</th>
+                            <th style="padding: 10px;">Tipo</th>
+                            <th style="padding: 10px;">Detalle</th>
+                            <th style="padding: 10px;">Precio</th>
+                            <th style="padding: 10px;">Estado</th>
+                            <th style="padding: 10px;">Fecha Límite</th>
+                            <th style="padding: 10px; text-align: center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in alquileres %}
+                            {% set vencido = a.esta_vencido() %}
+                            <tr style="border-bottom: 1px solid #222; {% if vencido %}background: rgba(255,68,68,0.04);{% endif %}">
+                                <td style="padding: 15px 10px; font-weight: bold;">{{ a.titulo }}</td>
+                                <td style="padding: 15px 10px; color: #aaa; text-transform: capitalize;">{{ a.tipo_producto }}</td>
+                                <td style="padding: 15px 10px; color: #888; font-size: 0.9rem;">{{ a.obtener_especifico() }}</td>
+                                <td style="padding: 15px 10px; color: #00ff66;">${{ "%.2f"|format(a.precio_alquiler) }}</td>
+
+                                <!-- ESTADO DEL ALQUILER -->
+                                <td style="padding: 15px 10px;">
+                                    {% if a.estado == 'pendiente' %}
+                                        <span style="background: rgba(255,153,0,0.15); color: #ff9900; border: 1px solid rgba(255,153,0,0.3); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                                            ⏳ Pendiente de confirmación
+                                        </span>
+                                    {% elif a.estado == 'activo' and vencido %}
+                                        <span style="background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                                            ⚠️ Vencido — Devolvé ya
+                                        </span>
+                                    {% elif a.estado == 'activo' %}
+                                        <span style="background: rgba(0,255,102,0.1); color: #00ff66; border: 1px solid rgba(0,255,102,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                                            ✔ Activo
+                                        </span>
+                                    {% elif a.estado == 'dev_pendiente' %}
+                                        <span style="background: rgba(26,115,232,0.15); color: #1a73e8; border: 1px solid rgba(26,115,232,0.3); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                                            📦 Devolución en proceso
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- FECHA LÍMITE -->
+                                <td style="padding: 15px 10px; font-size: 0.85rem;">
+                                    {% if a.estado == 'pendiente' %}
+                                        <span style="color: #555;">Se asigna al confirmar</span>
+                                    {% elif a.fecha_vencimiento %}
+                                        <span style="color: {% if vencido %}#ff4444{% else %}#aaa{% endif %};">
+                                            {{ a.fecha_vencimiento.strftime('%d/%m/%Y') }}
+                                        </span>
+                                    {% else %}
+                                        <span style="color: #555;">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- ACCIÓN -->
+                                <td style="padding: 15px 10px; text-align: center;">
+                                    {% if a.estado == 'pendiente' %}
+                                        <span style="color: #555; font-size: 0.8rem; font-style: italic;">Esperando al local</span>
+                                    {% elif a.estado == 'activo' %}
+                                        <a href="{{ url_for('devolver_item', prod_id=a.id) }}"
+                                           onclick="return confirm('¿Confirmás que ya devolviste \'{{ a.titulo }}\'? El local verificará la recepción.');"
+                                           style="background: #ff4444; color: #fff; padding: 6px 14px; text-decoration: none; font-weight: bold; border-radius: 4px; font-size: 0.85rem;">
+                                            <i class="fas fa-undo"></i> Devolver
+                                        </a>
+                                    {% elif a.estado == 'dev_pendiente' %}
+                                        <span style="color: #1a73e8; font-size: 0.8rem; font-style: italic;">El local está verificando</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color: #666; margin: 0;">No tenés ningún alquiler activo en este momento.</p>
+            {% endif %}
+        </div>
+
+        <h2>Mis Reservas (Lista de Espera)</h2>
+        <div style="background: #0b0b0b; border: 1px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 40px;">
+            {% if reservas %}
+                <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #333; color: #aaa;">
+                            <th style="padding: 10px;">Item</th>
+                            <th style="padding: 10px;">Tipo</th>
+                            <th style="padding: 10px;">Detalle</th>
+                            <th style="padding: 10px; text-align: center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reservas %}
+                            <tr style="border-bottom: 1px solid #222;">
+                                <td style="padding: 15px 10px; font-weight: bold;">{{ r.titulo }}</td>
+                                <td style="padding: 15px 10px; color: #aaa; text-transform: capitalize;">{{ r.tipo_producto }}</td>
+                                <td style="padding: 15px 10px; color: #888; font-size: 0.9rem;">{{ r.obtener_especifico() }}</td>
+                                <td style="padding: 15px 10px; text-align: center;">
+                                    <a href="{{ url_for('cancelar_reserva', prod_id=r.id) }}" style="background: #ff9900; color: #000; padding: 6px 14px; text-decoration: none; font-weight: bold; border-radius: 4px; font-size: 0.85rem;">Cancelar Reserva</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color: #666; margin: 0;">No estás anotado en ninguna lista de espera.</p>
+            {% endif %}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{{ url_for('inicio') }}" style="display: inline-block; padding: 10px 24px; background: #1c1c1c; color: #fff; text-decoration: none; border: 1px solid #333; border-radius: 6px; font-weight: bold;">← Volver al Catálogo</a>
+        </div>
+    </main>
+
+</body>
+</html>

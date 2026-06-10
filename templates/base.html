@@ -1,10 +1,29 @@
 <!DOCTYPE html>
+<html lang="es">
 <head>
-    <link rel="stylesheet" href="../static/estilos.css">
-    <title> Alquilando </title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Alquilando{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
+    {% block hero %}{% endblock %}
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="flash-container">
+                {% for categoria, m in mensajes %}
+                    <p class="{% if categoria == 'success' %}flash-success{% elif categoria == 'info' %}flash-info{% elif categoria == 'warning' %}flash-warning{% else %}flash-danger{% endif %}">
+                        {{ m }}
+                    </p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block contenido %}{% endblock %}
 
 </body>
 </html>

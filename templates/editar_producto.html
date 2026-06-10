@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block titulo %}Editar Producto{% endblock %}
+
+{% block hero %}
+<div class="panel-header">
+    <span>🎬 Panel de Administración</span>
+    <a href="{{ url_for('dashboard') }}" class="texto-claro">
+        <i class="fas fa-arrow-left"></i> Volver al panel
+    </a>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="form-card">
+    <h2>
+        {% if producto.tipo_producto == 'pelicula' %}🎬{% else %}🎮{% endif %}
+        Editar Producto
+    </h2>
+    <p class="subtitulo">Modificando: <strong style="color:#fff;">{{ producto.titulo }}</strong></p>
+
+    <div class="info-badge">
+        <span>ID:</span> #{{ producto.id }} &nbsp;·&nbsp;
+        <span>Tipo:</span> {{ producto.tipo_producto }} &nbsp;·&nbsp;
+        <span>Alquilado</span> {{ producto.contador_alquileres }} veces
+    </div>
+
+    <form action="{{ url_for('administrar_editar_producto', prod_id=producto.id) }}" method="POST" enctype="multipart/form-data">
+        <div class="campo">
+            <label><i class="fas fa-film"></i> Título</label>
+            <input type="text" name="titulo" value="{{ producto.titulo }}" required>
+        </div>
+        <div class="campo">
+            <label><i class="fas fa-tag"></i> Género</label>
+            <input type="text" name="genero" value="{{ producto.genero or '' }}">
+        </div>
+        <div class="fila-doble">
+            <div class="campo">
+                <label><i class="fas fa-dollar-sign"></i> Precio de Alquiler ($)</label>
+                <input type="number" step="0.01" name="precio" value="{{ producto.precio_alquiler }}" required>
+            </div>
+            <div class="campo">
+                <label><i class="fas fa-cubes"></i> Stock</label>
+                <input type="number" name="stock" value="{{ producto.stock }}" min="0">
+            </div>
+        </div>
+        <div class="campo">
+            <label>
+                {% if producto.tipo_producto == 'pelicula' %}
+                    <i class="fas fa-compact-disc"></i> Formato
+                {% else %}
+                    <i class="fas fa-gamepad"></i> Plataforma
+                {% endif %}
+            </label>
+            <input type="text" name="especifico"
+                value="{% if producto.tipo_producto == 'pelicula' %}{{ producto.formato or '' }}{% else %}{{ producto.plataforma or '' }}{% endif %}"
+                placeholder="{% if producto.tipo_producto == 'pelicula' %}Ej: BluRay-4K, DVD{% else %}Ej: PS5, Nintendo Switch{% endif %}">
+        </div>
+        <div class="campo">
+            <label><i class="fas fa-image"></i> Nueva imagen
+                <span class="texto-gris" style="font-weight: normal;">(opcional — dejá vacío para mantener la actual)</span>
+            </label>
+            <input type="file" name="imagen" accept="image/*" class="texto-claro">
+            <p class="texto-gris" style="font-size: 0.78rem; margin-top: 4px;">Imagen actual: {{ producto.imagen }}</p>
+        </div>
+        <button type="submit" class="btn-formulario naranja">
+            <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+    </form>
+
+    <a href="{{ url_for('dashboard') }}" class="btn-cancelar">Cancelar y volver sin guardar</a>
+</div>
+{% endblock %}

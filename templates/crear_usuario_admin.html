@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block titulo %}Crear Usuario{% endblock %}
+
+{% block hero %}
+<div class="panel-header">
+    <span>🎬 Panel de Administración</span>
+    <a href="{{ url_for('dashboard') }}" class="texto-claro">
+        <i class="fas fa-arrow-left"></i> Volver al panel
+    </a>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="form-card">
+    <h2><i class="fas fa-user-plus" style="color: #00c853; margin-right: 8px;"></i>Crear Nuevo Usuario</h2>
+    <p class="subtitulo">Alta de empleados y administradores. Los clientes se registran solos desde el sitio.</p>
+
+    <form action="{{ url_for('administrar_crear_usuario') }}" method="POST">
+        <div class="campo">
+            <label><i class="fas fa-user"></i> Nombre Completo</label>
+            <input type="text" name="nombre" placeholder="Ej: Laura González" required>
+        </div>
+        <div class="campo">
+            <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+            <input type="email" name="email" placeholder="laura@videoclub.com" required>
+        </div>
+        <div class="campo">
+            <label><i class="fas fa-key"></i> Contraseña</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+        </div>
+        <div class="campo">
+            <label><i class="fas fa-shield-alt"></i> Rol en el Sistema</label>
+            <select name="rol" id="selector-rol" onchange="mostrarInfoRol(this.value)">
+                <option value="empleado">👔 Empleado — Atiende el mostrador</option>
+                <option value="admin">👑 Administrador — Control total</option>
+            </select>
+            <div id="info-empleado" class="rol-info empleado visible">
+                Puede confirmar alquileres y devoluciones, y editar el catálogo. No accede a ingresos ni gestiona usuarios.
+            </div>
+            <div id="info-admin" class="rol-info admin">
+                Acceso completo: usuarios, ingresos, catálogo y confirmaciones. Solo para dueños o encargados de confianza.
+            </div>
+        </div>
+        <button type="submit" class="btn-formulario verde">
+            <i class="fas fa-save"></i> Crear Usuario
+        </button>
+    </form>
+
+    <a href="{{ url_for('dashboard') }}" class="btn-cancelar">Cancelar y volver sin guardar</a>
+</div>
+
+<script>
+    function mostrarInfoRol(rol) {
+        // Muestra la descripción correspondiente al rol seleccionado
+        document.getElementById('info-empleado').classList.toggle('visible', rol === 'empleado');
+        document.getElementById('info-admin').classList.toggle('visible', rol === 'admin');
+    }
+</script>
+{% endblock %}
