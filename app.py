@@ -291,9 +291,9 @@ class GestorInventario:
         # Devoluciones avisadas por el cliente que esperan confirmación física
         return ProductoAlquiler.query.filter_by(estado='dev_pendiente').all()
 
-# =========================================================================
+
 # RUTAS PÚBLICAS Y DE CLIENTES
-# =========================================================================
+
 
 @app.route('/')
 def inicio():
@@ -369,9 +369,9 @@ def mis_alquileres():
     usuario_actual = Usuario.buscar_por_id(session['usuario_id'])
     return render_template('mis_alquileres.html', alquileres=usuario_actual.alquileres, reservas=usuario_actual.reservas_solicitadas)
 
-# =========================================================================
+
 # RUTAS EXCLUSIVAS DE ADMINISTRACIÓN (SUPER PANEL)
-# =========================================================================
+
 
 @app.route('/admin/dashboard', methods=['GET', 'POST'])
 def dashboard():
@@ -551,7 +551,7 @@ def administrar_editar_producto(prod_id):
         return redirect(url_for('dashboard'))
     return render_template('editar_producto.html', producto=producto)
 
-# ── NUEVO: Confirmación y rechazo de alquileres / devoluciones ────────────
+# Confirmación y rechazo de alquileres / devoluciones 
 
 @app.route('/admin/alquiler/confirmar/<int:prod_id>')
 def confirmar_alquiler(prod_id):
@@ -584,9 +584,9 @@ def confirmar_devolucion(prod_id):
             flash(f"Devolución de '{producto.titulo}' confirmada. Producto de vuelta en stock.", "success")
     return redirect(url_for('dashboard'))
 
-# =========================================================================
+
 # RUTAS DE AUTENTICACIÓN Y SESIÓN
-# =========================================================================
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
