@@ -1,72 +1,84 @@
 {% extends 'base.html' %}
-{% block titulo %}Editar Producto{% endblock %}
+{% block title %}Editar Producto{% endblock %}
 
-{% block hero %}
-<div class="panel-header">
-    <span>🎬 Panel de Administración</span>
-    <a href="{{ url_for('dashboard') }}" class="texto-claro">
+{% block content %}
+<div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border, #333); margin-bottom: 30px; max-width: 520px; margin-left: auto; margin-right: auto;">
+    <span style="color: #fff; font-weight: bold;">🎬 Panel de Administración</span>
+    <a href="{{ url_for('dashboard') }}" class="texto-claro" style="color: #ccc; text-decoration: none;">
         <i class="fas fa-arrow-left"></i> Volver al panel
     </a>
 </div>
-{% endblock %}
 
-{% block contenido %}
-<div class="form-card">
-    <h2>
-        {% if producto.tipo_producto == 'pelicula' %}🎬{% else %}🎮{% endif %}
-        Editar Producto
-    </h2>
-    <p class="subtitulo">Modificando: <strong style="color:#fff;">{{ producto.titulo }}</strong></p>
+<main style="display: flex; justify-content: center; align-items: center; padding: 0 20px 40px 20px;">
 
-    <div class="info-badge">
-        <span>ID:</span> #{{ producto.id }} &nbsp;·&nbsp;
-        <span>Tipo:</span> {{ producto.tipo_producto }} &nbsp;·&nbsp;
-        <span>Alquilado</span> {{ producto.contador_alquileres }} veces
+    <div class="auth-container">
+        <h2 class="subtitulo-seccion" style="margin-top: 0; margin-bottom: 10px; font-size: 2rem; text-align: center;">
+            {% if producto.tipo_producto == 'pelicula' %}🎬{% else %}🎮{% endif %}
+            Editar Producto
+        </h2>
+        <p class="subtitulo" style="color: #888; text-align: center; margin-bottom: 20px; font-size: 0.95rem;">
+            Modificando: <strong style="color:#fff;">{{ producto.titulo }}</strong>
+        </p>
+
+        <div class="info-badge" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; font-size: 0.85rem; color: #ccc; margin-bottom: 24px;">
+            <span>ID:</span> #{{ producto.id }} &nbsp;·&nbsp;
+            <span>Tipo:</span> {{ producto.tipo_producto }} &nbsp;·&nbsp;
+            <span>Alquilado:</span> {{ producto.contador_alquileres }} veces
+        </div>
+
+        <form action="{{ url_for('administrar_editar_producto', prod_id=producto.id) }}" method="POST" enctype="multipart/form-data" class="form-simple" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-film"></i> Título</label>
+                <input type="text" name="titulo" value="{{ producto.titulo }}" required>
+            </div>
+
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-tag"></i> Género</label>
+                <input type="text" name="genero" value="{{ producto.genero or '' }}">
+            </div>
+
+            <div class="fila-doble" style="display: flex; gap: 16px;">
+                <div class="campo" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-dollar-sign"></i> Precio ($)</label>
+                    <input type="number" step="0.01" name="precio" value="{{ producto.precio_alquiler }}" required>
+                </div>
+                <div class="campo" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-cubes"></i> Stock</label>
+                    <input type="number" name="stock" value="{{ producto.stock }}" min="0">
+                </div>
+            </div>
+
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;">
+                    {% if producto.tipo_producto == 'pelicula' %}
+                        <i class="fas fa-compact-disc"></i> Formato
+                    {% else %}
+                        <i class="fas fa-gamepad"></i> Plataforma
+                    {% endif %}
+                </label>
+                <input type="text" name="especifico"
+                    value="{% if producto.tipo_producto == 'pelicula' %}{{ producto.formato or '' }}{% else %}{{ producto.plataforma or '' }}{% endif %}"
+                    placeholder="{% if producto.tipo_producto == 'pelicula' %}Ej: BluRay-4K, DVD{% else %}Ej: PS5, Nintendo Switch{% endif %}">
+            </div>
+
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-image"></i> Nueva imagen
+                    <span class="texto-gris" style="font-weight: normal; color: #888;">(opcional)</span>
+                </label>
+                <input type="file" name="imagen" accept="image/*" class="texto-claro" style="background: transparent; border: none; padding: 5px 0;">
+                <p class="texto-gris" style="font-size: 0.78rem; margin-top: 4px; color: #888;">Imagen actual: {{ producto.imagen }}</p>
+            </div>
+
+            <button type="submit" class="auth-btn" style="background: #e67e22;">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{{ url_for('dashboard') }}" class="btn-cancelar" style="color: #888; text-decoration: none; font-size: 0.95rem;">Cancelar y volver sin guardar</a>
+        </div>
     </div>
 
-    <form action="{{ url_for('administrar_editar_producto', prod_id=producto.id) }}" method="POST" enctype="multipart/form-data">
-        <div class="campo">
-            <label><i class="fas fa-film"></i> Título</label>
-            <input type="text" name="titulo" value="{{ producto.titulo }}" required>
-        </div>
-        <div class="campo">
-            <label><i class="fas fa-tag"></i> Género</label>
-            <input type="text" name="genero" value="{{ producto.genero or '' }}">
-        </div>
-        <div class="fila-doble">
-            <div class="campo">
-                <label><i class="fas fa-dollar-sign"></i> Precio de Alquiler ($)</label>
-                <input type="number" step="0.01" name="precio" value="{{ producto.precio_alquiler }}" required>
-            </div>
-            <div class="campo">
-                <label><i class="fas fa-cubes"></i> Stock</label>
-                <input type="number" name="stock" value="{{ producto.stock }}" min="0">
-            </div>
-        </div>
-        <div class="campo">
-            <label>
-                {% if producto.tipo_producto == 'pelicula' %}
-                    <i class="fas fa-compact-disc"></i> Formato
-                {% else %}
-                    <i class="fas fa-gamepad"></i> Plataforma
-                {% endif %}
-            </label>
-            <input type="text" name="especifico"
-                value="{% if producto.tipo_producto == 'pelicula' %}{{ producto.formato or '' }}{% else %}{{ producto.plataforma or '' }}{% endif %}"
-                placeholder="{% if producto.tipo_producto == 'pelicula' %}Ej: BluRay-4K, DVD{% else %}Ej: PS5, Nintendo Switch{% endif %}">
-        </div>
-        <div class="campo">
-            <label><i class="fas fa-image"></i> Nueva imagen
-                <span class="texto-gris" style="font-weight: normal;">(opcional — dejá vacío para mantener la actual)</span>
-            </label>
-            <input type="file" name="imagen" accept="image/*" class="texto-claro">
-            <p class="texto-gris" style="font-size: 0.78rem; margin-top: 4px;">Imagen actual: {{ producto.imagen }}</p>
-        </div>
-        <button type="submit" class="btn-formulario naranja">
-            <i class="fas fa-save"></i> Guardar Cambios
-        </button>
-    </form>
-
-    <a href="{{ url_for('dashboard') }}" class="btn-cancelar">Cancelar y volver sin guardar</a>
-</div>
+</main>
 {% endblock %}

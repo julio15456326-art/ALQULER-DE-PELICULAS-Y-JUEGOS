@@ -1,28 +1,31 @@
 {% extends 'base.html' %}
-{% block titulo %}Alquilando — Películas{% endblock %}
+{% block title %}Alquilando — Películas{% endblock %}
 
-{% block hero %}
-<section class="pantalla-principal">
-    <nav class="nav-catalogo">
+{% block content %}
+<section class="pantalla-principal" style="padding: 20px 0; border-bottom: 1px solid var(--border, #333); margin-bottom: 30px;">
+    <nav class="nav-catalogo" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         {% if session.get('usuario_nombre') %}
-            <span>Hola, {{ session['usuario_nombre'] }}</span>
-            <a href="{{ url_for('mis_alquileres') }}">Mis Alquileres</a>
-            {% if session.get('usuario_rol') in ('admin', 'empleado') %}
-                <a href="{{ url_for('dashboard') }}" class="nav-admin">Panel Admin</a>
-            {% endif %}
-            <a href="{{ url_for('logout') }}" class="nav-peligro">Cerrar Sesión</a>
+            <span>Hola, <strong>{{ session['usuario_nombre'] }}</strong></span>
+            <div>
+                <a href="{{ url_for('mis_alquileres') }}" style="margin-right: 15px; color: #fff; text-decoration: none;">Mis Alquileres</a>
+                {% if session.get('usuario_rol') in ('admin', 'empleado') %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-admin" style="margin-right: 15px; color: #6366f1; text-decoration: none; font-weight: bold;">Panel Admin</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="nav-peligro" style="color: #ef4444; text-decoration: none;">Cerrar Sesión</a>
+            </div>
         {% else %}
-            <a href="{{ url_for('login') }}">Iniciar Sesión</a>
-            <a href="{{ url_for('registro') }}" style="border: 1px solid #fff; padding: 5px 10px; border-radius: 4px;">Registrarse</a>
+            <div>
+                <a href="{{ url_for('login') }}" style="margin-right: 15px; color: #fff; text-decoration: none;">Iniciar Sesión</a>
+                <a href="{{ url_for('registro') }}" style="border: 1px solid #6366f1; background: rgba(99, 102, 241, 0.1); padding: 6px 12px; border-radius: 8px; color: #fff; text-decoration: none;">Registrarse</a>
+            </div>
         {% endif %}
     </nav>
-    <h1>Catálogo de Películas</h1>
+    <h1 style="font-size: 2.2rem; color: #fff; margin: 10px 0 0 0;">Catálogo de Películas</h1>
 </section>
-{% endblock %}
 
-{% block contenido %}
-<main class="catalogo">
-    <h2 class="titulo-seccion">Todas las Películas disponibles</h2>
+<main class="catalogo" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+    <h2 class="titulo-seccion" style="font-size: 1.5rem; margin-bottom: 24px; color: #fff;">Todas las Películas disponibles</h2>
+    
     <div class="lista-items">
         {% for p in peliculas %}
             <div class="item">
@@ -44,12 +47,12 @@
                 </a>
             </div>
         {% else %}
-            <p class="texto-vacio">No hay películas registradas.</p>
+            <p class="texto-vacio" style="color: #888; text-align: center; padding: 4px 0;">No hay películas registradas.</p>
         {% endfor %}
     </div>
 
-    <div class="separador centrado">
-        <a href="{{ url_for('inicio') }}" class="btn-formulario" style="padding: 12px 28px; display: inline-block;">← Volver al Inicio</a>
+    <div class="separador centrado" style="text-align: center; margin: 50px 0 40px 0;">
+        <a href="{{ url_for('inicio') }}" style="color: #6366f1; text-decoration: none; font-weight: bold; font-size: 1.05rem;">← Volver al Inicio</a>
     </div>
 </main>
 {% endblock %}

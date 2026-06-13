@@ -1,83 +1,79 @@
 {% extends 'base.html' %}
-{% block titulo %}Mis Alquileres y Reservas{% endblock %}
+{% block title %}Mis Alquileres y Reservas{% endblock %}
 
-{% block hero %}
-<section class="pantalla-principal">
-    <nav class="nav-catalogo">
-        <span>Hola, {{ session['usuario_nombre'] }}</span>
-        <a href="{{ url_for('inicio') }}">Inicio</a>
-        <a href="{{ url_for('logout') }}" class="nav-peligro">Cerrar Sesión</a>
+{% block content %}
+<section class="pantalla-principal" style="padding: 20px 0; border-bottom: 1px solid var(--border, #333); margin-bottom: 30px;">
+    <nav class="nav-catalogo" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <span>Hola, <strong>{{ session['usuario_nombre'] }}</strong></span>
+        <div>
+            <a href="{{ url_for('inicio') }}" style="margin-right: 15px; color: #fff; text-decoration: none;">Inicio</a>
+            <a href="{{ url_for('logout') }}" class="nav-peligro" style="color: #ef4444; text-decoration: none; font-weight: bold;">Cerrar Sesión</a>
+        </div>
     </nav>
-    <h1>Mi Espacio Personal</h1>
+    <h1 style="font-size: 2.2rem; color: #fff; margin: 10px 0 0 0;">Mi Espacio Personal</h1>
 </section>
-{% endblock %}
 
-{% block contenido %}
-<main class="catalogo" style="max-width: 1100px; margin: 0 auto;">
+<main class="catalogo" style="max-width: 1100px; margin: 0 auto; padding: 0 20px;">
 
-    <!-- ALQUILERES ACTIVOS -->
-    <h2 class="titulo-seccion">Mis Alquileres</h2>
-    <div class="caja-datos">
+    <h2 class="subtitulo-seccion" style="font-size: 1.5rem; margin-bottom: 15px; color: #fff;">Mis Alquileres</h2>
+    <div class="auth-container" style="max-width: 100%; padding: 24px; margin-bottom: 40px;">
         {% if alquileres %}
-            <table class="tabla-panel tabla-cliente">
+            <table class="tabla-panel tabla-cliente" style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Tipo</th>
-                        <th>Detalle</th>
-                        <th>Precio</th>
-                        <th>Estado</th>
-                        <th>Fecha Límite</th>
-                        <th style="text-align: center;">Acción</th>
+                    <tr style="border-bottom: 1px solid #333;">
+                        <th style="padding: 12px; color: #888;">Item</th>
+                        <th style="padding: 12px; color: #888;">Tipo</th>
+                        <th style="padding: 12px; color: #888;">Detalle</th>
+                        <th style="padding: 12px; color: #888;">Precio</th>
+                        <th style="padding: 12px; color: #888;">Estado</th>
+                        <th style="padding: 12px; color: #888;">Fecha Límite</th>
+                        <th style="padding: 12px; color: #888; text-align: center;">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for a in alquileres %}
                         {% set vencido = a.esta_vencido() %}
-                        <tr {% if vencido %}style="background: rgba(255,68,68,0.04);"{% endif %}>
-                            <td style="font-weight: bold;">{{ a.titulo }}</td>
-                            <td class="texto-claro" style="text-transform: capitalize;">{{ a.tipo_producto }}</td>
-                            <td class="texto-gris">{{ a.obtener_especifico() }}</td>
-                            <td class="texto-verde">${{ "%.2f"|format(a.precio_alquiler) }}</td>
+                        <tr {% if vencido %}style="background: rgba(255,68,68,0.04);"{% endif %} style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 16px 12px; font-weight: bold; color: #fff;">{{ a.titulo }}</td>
+                            <td class="texto-claro" style="padding: 16px 12px; text-transform: capitalize; color: #ccc;">{{ a.tipo_producto }}</td>
+                            <td class="texto-gris" style="padding: 16px 12px; color: #888;">{{ a.obtener_especifico() }}</td>
+                            <td class="texto-verde" style="padding: 16px 12px; color: #10b981;">${{ "%.2f"|format(a.precio_alquiler) }}</td>
 
-                            <!-- ESTADO -->
-                            <td>
+                            <td style="padding: 16px 12px;">
                                 {% if a.estado == 'pendiente' %}
-                                    <span class="badge pendiente">⏳ Pendiente de confirmación</span>
+                                    <span class="badge pendiente" style="background: rgba(245,158,11,0.15); color: #f59e0b; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem;">⏳ Pendiente</span>
                                 {% elif a.estado == 'activo' and vencido %}
-                                    <span class="badge vencido">⚠️ Vencido — Devolvé ya</span>
+                                    <span class="badge vencido" style="background: rgba(239,68,68,0.15); color: #ef4444; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem;">⚠️ Vencido</span>
                                 {% elif a.estado == 'activo' %}
-                                    <span class="badge alquiler-ok">✔ Activo</span>
+                                    <span class="badge alquiler-ok" style="background: rgba(16,185,129,0.15); color: #10b981; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem;">✔ Activo</span>
                                 {% elif a.estado == 'dev_pendiente' %}
-                                    <span class="badge dev-pendiente">📦 Devolución en proceso</span>
+                                    <span class="badge dev-pendiente" style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem;">📦 En proceso</span>
                                 {% endif %}
                             </td>
 
-                            <!-- FECHA LÍMITE -->
-                            <td>
+                            <td style="padding: 16px 12px;">
                                 {% if a.estado == 'pendiente' %}
-                                    <span class="texto-gris">Se asigna al confirmar</span>
+                                    <span class="texto-gris" style="color: #888;">Al confirmar</span>
                                 {% elif a.fecha_vencimiento %}
-                                    <span class="{% if vencido %}texto-rojo{% else %}texto-claro{% endif %}">
+                                    <span style="color: {% if vencido %}#ef4444{% else %}#ccc{% endif %};">
                                         {{ a.fecha_vencimiento.strftime('%d/%m/%Y') }}
                                     </span>
                                 {% else %}
-                                    <span class="texto-gris">—</span>
+                                    <span class="texto-gris" style="color: #888;">—</span>
                                 {% endif %}
                             </td>
 
-                            <!-- ACCIÓN -->
-                            <td style="text-align: center;">
+                            <td style="padding: 16px 12px; text-align: center;">
                                 {% if a.estado == 'pendiente' %}
-                                    <span class="texto-gris" style="font-style: italic;">Esperando al local</span>
+                                    <span class="texto-gris" style="font-style: italic; color: #888;">Esperando local</span>
                                 {% elif a.estado == 'activo' %}
                                     <a href="{{ url_for('devolver_item', prod_id=a.id) }}"
                                        onclick="return confirm('¿Confirmás que ya devolviste \'{{ a.titulo }}\'? El local verificará la recepción.');"
-                                       class="btn-accion peligro">
-                                        <i class="fas fa-undo"></i> Devolver
+                                       style="background: rgba(239,68,68,0.15); color: #ef4444; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                                        Devolver
                                     </a>
                                 {% elif a.estado == 'dev_pendiente' %}
-                                    <span class="texto-azul" style="font-style: italic;">El local está verificando</span>
+                                    <span style="font-style: italic; color: #3b82f6; font-size: 0.85rem;">Verificando...</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -85,45 +81,46 @@
                 </tbody>
             </table>
         {% else %}
-            <p class="texto-vacio">No tenés ningún alquiler activo en este momento.</p>
+            <p class="texto-vacio" style="color: #888; text-align: center; padding: 20px 0; margin: 0;">No tenés ningún alquiler activo en este momento.</p>
         {% endif %}
     </div>
 
-    <!-- LISTA DE ESPERA -->
-    <h2 class="titulo-seccion">Mis Reservas (Lista de Espera)</h2>
-    <div class="caja-datos">
+    <h2 class="subtitulo-seccion" style="font-size: 1.5rem; margin-bottom: 15px; color: #fff;">Mis Reservas (Lista de Espera)</h2>
+    <div class="auth-container" style="max-width: 100%; padding: 24px; margin-bottom: 40px;">
         {% if reservas %}
-            <table class="tabla-panel tabla-cliente">
+            <table class="tabla-panel tabla-cliente" style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Tipo</th>
-                        <th>Detalle</th>
-                        <th style="text-align: center;">Acción</th>
+                    <tr style="border-bottom: 1px solid #333;">
+                        <th style="padding: 12px; color: #888;">Item</th>
+                        <th style="padding: 12px; color: #888;">Tipo</th>
+                        <th style="padding: 12px; color: #888;">Detalle</th>
+                        <th style="padding: 12px; color: #888; text-align: center;">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in reservas %}
-                        <tr>
-                            <td style="font-weight: bold;">{{ r.titulo }}</td>
-                            <td class="texto-claro" style="text-transform: capitalize;">{{ r.tipo_producto }}</td>
-                            <td class="texto-gris">{{ r.obtener_especifico() }}</td>
-                            <td style="text-align: center;">
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 16px 12px; font-weight: bold; color: #fff;">{{ r.titulo }}</td>
+                            <td class="texto-claro" style="padding: 16px 12px; text-transform: capitalize; color: #ccc;">{{ r.tipo_producto }}</td>
+                            <td class="texto-gris" style="padding: 16px 12px; color: #888;">{{ r.obtener_especifico() }}</td>
+                            <td style="padding: 16px 12px; text-align: center;">
                                 <a href="{{ url_for('cancelar_reserva', prod_id=r.id) }}"
-                                   class="btn-accion advertir">Cancelar Reserva</a>
+                                   style="background: rgba(245,158,11,0.15); color: #f59e0b; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                                    Cancelar
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% else %}
-            <p class="texto-vacio">No estás anotado en ninguna lista de espera.</p>
+            <p class="texto-vacio" style="color: #888; text-align: center; padding: 20px 0; margin: 0;">No estás anotado en ninguna lista de espera.</p>
         {% endif %}
     </div>
 
-    <div class="centrado" style="margin-bottom: 40px;">
-        <a href="{{ url_for('inicio') }}" class="btn-volver">← Volver al Catálogo</a>
-    </div>
+    <div style="text-align: center; margin-bottom: 50px;">
+        <a href="{{ url_for('inicio') }}" style="color: #6366f1; text-decoration: none; font-weight: bold; font-size: 1.05rem;">← Volver al Catálogo</a>
+    </nav>
 
 </main>
 {% endblock %}

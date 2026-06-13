@@ -1,20 +1,22 @@
 {% extends 'base.html' %}
-{% block titulo %}Alquilando — Iniciar Sesión{% endblock %}
+{% block title %}Alquilando — Iniciar Sesión{% endblock %}
 
-{% block contenido %}
-<main class="catalogo" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+{% block content %}
+<main class="catalogo" style="min-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px;">
 
-    <h2 class="subtitulo-seccion" style="margin-bottom: 20px;">Iniciar Sesión</h2>
+    <div class="auth-container">
+        <h2 class="subtitulo-seccion" style="margin-top: 0; margin-bottom: 28px; font-size: 2.2rem; text-align: center;">Iniciar Sesión</h2>
 
-    <form action="{{ url_for('login') }}" method="POST" class="form-simple">
-        <input type="email" name="email" placeholder="Correo electrónico" required>
-        <input type="password" name="password" placeholder="Contraseña" required>
-        <button type="submit" class="btn-formulario">Ingresar</button>
-    </form>
+        <form action="{{ url_for('login') }}" method="POST" class="form-simple" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="email" name="email" placeholder="Correo electrónico" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit" class="auth-btn">Ingresar</button>
+        </form>
 
-    <p class="texto-apoyo" style="margin-top: 20px;">
-        <a href="{{ url_for('registro') }}" class="texto-claro">¿No tenés cuenta? Registrate acá</a>
-    </p>
+        <p class="texto-apoyo" style="margin-top: 32px; text-align: center; font-size: 1rem;">
+            <a href="{{ url_for('registro') }}" class="texto-claro">¿No tenés cuenta? Registrate acá</a>
+        </p>
+    </div>
 
 </main>
 {% endblock %}

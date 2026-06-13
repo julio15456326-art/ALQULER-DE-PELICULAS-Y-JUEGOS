@@ -1,51 +1,63 @@
 {% extends 'base.html' %}
-{% block titulo %}Editar Usuario{% endblock %}
+{% block title %}Editar Usuario{% endblock %}
 
-{% block hero %}
-<div class="panel-header">
-    <span>🎬 Panel de Administración</span>
-    <a href="{{ url_for('dashboard') }}" class="texto-claro">
+{% block content %}
+<div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border, #333); margin-bottom: 30px; max-width: 520px; margin-left: auto; margin-right: auto;">
+    <span style="color: #fff; font-weight: bold;">🎬 Panel de Administración</span>
+    <a href="{{ url_for('dashboard') }}" class="texto-claro" style="color: #ccc; text-decoration: none;">
         <i class="fas fa-arrow-left"></i> Volver al panel
     </a>
 </div>
-{% endblock %}
 
-{% block contenido %}
-<div class="form-card">
-    <h2><i class="fas fa-user-edit texto-azul" style="margin-right: 8px;"></i>Editar Cliente</h2>
-    <p class="subtitulo">Modificá los datos del usuario en el sistema.</p>
+<main style="display: flex; justify-content: center; align-items: center; padding: 0 20px 40px 20px;">
 
-    <div class="info-badge">
-        <span>ID:</span> #{{ usuario.id }} &nbsp;·&nbsp;
-        <span>Rol:</span> {{ usuario.rol }} &nbsp;·&nbsp;
-        <span>Estado:</span>
-        {% if usuario.bloqueado %}
-            <span class="texto-rojo">Suspendido</span>
-        {% else %}
-            <span class="texto-verde">Activo</span>
-        {% endif %}
+    <div class="auth-container">
+        <h2 class="subtitulo-seccion" style="margin-top: 0; margin-bottom: 10px; font-size: 2rem; text-align: center;">
+            <i class="fas fa-user-edit" style="color: #3b82f6; margin-right: 8px;"></i>Editar Cliente
+        </h2>
+        <p class="subtitulo" style="color: #888; text-align: center; margin-bottom: 20px; font-size: 0.95rem;">
+            Modificá los datos del usuario en el sistema.
+        </p>
+
+        <div class="info-badge" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; font-size: 0.85rem; color: #ccc; margin-bottom: 24px;">
+            <span>ID:</span> #{{ usuario.id }} &nbsp;·&nbsp;
+            <span>Rol:</span> {{ usuario.rol }} &nbsp;·&nbsp;
+            <span>Estado:</span>
+            {% if usuario.bloqueado %}
+                <span style="color: #ef4444; font-weight: bold;">領 Suspendido</span>
+            {% else %}
+                <span style="color: #10b981; font-weight: bold;">✔ Activo</span>
+            {% endif %}
+        </div>
+
+        <form action="{{ url_for('administrar_editar_usuario', user_id=usuario.id) }}" method="POST" class="form-simple" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-user"></i> Nombre Completo</label>
+                <input type="text" name="nombre" value="{{ usuario.nombre }}" required>
+            </div>
+
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                <input type="email" name="email" value="{{ usuario.email }}" required>
+            </div>
+
+            <div class="campo" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: #ccc; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-key"></i> Nueva Contraseña 
+                    <span class="texto-gris" style="font-weight: normal; color: #888;">(opcional)</span>
+                </label>
+                <input type="password" name="password" placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="auth-btn" style="background: #3b82f6;">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{{ url_for('dashboard') }}" class="btn-cancelar" style="color: #888; text-decoration: none; font-size: 0.95rem;">Cancelar y volver sin guardar</a>
+        </div>
     </div>
 
-    <form action="{{ url_for('administrar_editar_usuario', user_id=usuario.id) }}" method="POST">
-        <div class="campo">
-            <label><i class="fas fa-user"></i> Nombre Completo</label>
-            <input type="text" name="nombre" value="{{ usuario.nombre }}" required>
-        </div>
-        <div class="campo">
-            <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
-            <input type="email" name="email" value="{{ usuario.email }}" required>
-        </div>
-        <div class="campo">
-            <label><i class="fas fa-key"></i> Nueva Contraseña
-                <span class="texto-gris" style="font-weight: normal;">(dejá vacío para no cambiarla)</span>
-            </label>
-            <input type="password" name="password" placeholder="••••••••">
-        </div>
-        <button type="submit" class="btn-formulario azul">
-            <i class="fas fa-save"></i> Guardar Cambios
-        </button>
-    </form>
-
-    <a href="{{ url_for('dashboard') }}" class="btn-cancelar">Cancelar y volver sin guardar</a>
-</div>
+</main>
 {% endblock %}
