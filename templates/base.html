@@ -17,7 +17,7 @@
             </a>
 
             <nav class="site-nav" aria-label="Navegación principal">
-                <a class="nav-link" href="{{ url_for('inicio') }}">Inicio</a>
+                
                 
                 {% if session.get('usuario_rol') in ('admin', 'empleado') %}
                     <a class="nav-link" href="{{ url_for('dashboard') }}">
@@ -29,6 +29,7 @@
             <div class="auth-actions">
                 {% if session.get('usuario_nombre') %}
                     <div class="user-pill">👋 Hola, {{ session['usuario_nombre'] }}</div>
+                    <a class="btn btn-secondary" href="{{ url_for('mis_alquileres') }}">Mis Alquileres</a>
                     <a class="btn btn-secondary" href="{{ url_for('logout') }}">Cerrar sesión</a>
                 {% else %}
                     <a class="btn btn-secondary" href="{{ url_for('login') }}">Iniciar sesión</a>

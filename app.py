@@ -288,9 +288,28 @@ class GestorInventario:
 
 @app.route('/')
 def inicio():
-    peliculas = GestorInventario.listar_para_catalogo(Pelicula, limite=5)
-    juegos = GestorInventario.listar_para_catalogo(Juego, limite=5)
-    return render_template('inicio.html', peliculas=peliculas, juegos=juegos)
+    peliculas = GestorInventario.listar_para_catalogo(Pelicula, limite=4)
+    juegos = GestorInventario.listar_para_catalogo(Juego, limite=4)
+
+# 1. Traemos el top 1 de cada uno para comparar
+    top_pelicula = peliculas[0] if peliculas else None
+    top_juego = juegos[0] if juegos else None
+    destacado = None
+    if top_pelicula and top_juego:
+        if top_pelicula.contador_alquileres >= top_juego.contador_alquileres:
+            destacado = top_pelicula
+        else:
+            destacado = top_juego
+    elif top_pelicula:
+        destacado = top_pelicula
+    elif top_juego:
+        destacado = top_juego
+
+    # 3. Pasamos la variable 'destacado' al template
+    return render_template('inicio.html', 
+                           peliculas=peliculas, 
+                           juegos=juegos, 
+                           destacado=destacado)
 
 @app.route('/peliculas')
 def ver_peliculas():
@@ -626,8 +645,8 @@ with app.app_context():
         p4 = Pelicula(titulo="Batman: El Caballero de la Noche", genero="Acción", precio_alquiler=400.00, stock=0, alquilado=True, imagen="default.jpg", formato="BluRay-4K", usuario_id=u1.id, fecha_alquiler=fecha_hace_10_dias, fecha_vencimiento=fecha_vencimiento_vieja, contador_alquileres=52, estado='activo')
 
         j1 = Juego(titulo="The Legend of Zelda: Tears of the Kingdom", genero="Aventura", precio_alquiler=800.00, stock=3, imagen="default.jpg", plataforma="Nintendo Switch", contador_alquileres=25)
-        j2 = Juego(titulo="GTA V", genero="Acción / Mundo Abierto", precio_alquiler=450.00, stock=0, alquilado=True, imagen="default.jpg", plataforma="PS5", usuario_id=u2.id, fecha_alquiler=datetime.now(), fecha_vencimiento=datetime.now() + timedelta(days=7), contador_alquileres=90, estado='activo')
-        j3 = Juego(titulo="Elden Ring", genero="Action RPG", precio_alquiler=700.00, stock=0, alquilado=True, imagen="default.jpg", plataforma="PC / Steam", contador_alquileres=14, usuario_id=u1.id, estado='pendiente')
+        j2 = Juego(titulo="GTA V", genero="Acción / Mundo Abierto", precio_alquiler=450.00, stock=0, alquilado=True, imagen="gta.jpg", plataforma="PS5", usuario_id=u2.id, fecha_alquiler=datetime.now(), fecha_vencimiento=datetime.now() + timedelta(days=7), contador_alquileres=90, estado='activo')
+        j3 = Juego(titulo="Elden Ring", genero="Action RPG", precio_alquiler=700.00, stock=0, alquilado=True, imagen="ring.webp", plataforma="PC / Steam", contador_alquileres=14, usuario_id=u1.id, estado='pendiente')
 
         db.session.add_all([p1, p2, p3, p4, j1, j2, j3])
         db.session.commit()

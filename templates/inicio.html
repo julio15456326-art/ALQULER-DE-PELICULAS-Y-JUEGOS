@@ -38,11 +38,44 @@
         </div>
 
         <div class="hero-visual" aria-hidden="true">
-            <div class="hero-visual-card main-card">
-                <div class="card-top">✨ Nueva selección</div>
-                <h2>Destacados del mes</h2>
-                <p>Disfrutá de una experiencia premium con estrenos, clásicos y juegos de última generación.</p>
+            <div class="hero-visual-card main-card" 
+                 style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 280px; transition: transform 0.3s ease;
+                        {% if destacado %}
+                            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(26, 26, 26, 0.4) 100%), url('{{ url_for('static', filename='img/' + destacado.imagen) }}');
+                            background-size: cover;
+                            background-position: center;
+                        {% endif %}">
+                
+                <div class="card-top" style="z-index: 2;">✨ Lo más alquilado del mes</div>
+                
+                {% if destacado %}
+                    <div style="z-index: 2; margin-top: 15px;">
+                        <h2 style="margin-top: 0; margin-bottom: 5px; color: #fff; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">{{ destacado.titulo }}</h2>
+                        <p style="font-size: 0.95rem; margin-bottom: 15px; color: #f0f0f0; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">
+                            ¡El favorito de la comunidad! Un éxito rotundo con un precio imperdible de 
+                            <strong>${{ "%.2f"|format(destacado.precio_alquiler) }}</strong>.
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: auto; z-index: 2;">
+                        {% if destacado.__class__.__name__ == 'Pelicula' %}
+                            <span class="badge" style="background-color: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Película</span>
+                        {% else %}
+                            <span class="badge" style="background-color: #3498db; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Juego</span>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('alquilar_item', prod_id=destacado.id) }}" class="btn btn-primary" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 4px; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                            Alquilar ya
+                        </a>
+                    </div>
+                {% else %}
+                    <div style="z-index: 2;">
+                        <h2>Destacados del mes</h2>
+                        <p>Disfrutá de una experiencia premium con estrenos, clásicos y juegos de última generación.</p>
+                    </div>
+                {% endif %}
             </div>
+
             <div class="hero-visual-card mini-card">
                 <span>🎉</span>
                 <div>
