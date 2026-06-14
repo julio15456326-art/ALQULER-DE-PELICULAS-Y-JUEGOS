@@ -3,10 +3,23 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from functools import wraps
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
 import os
 
 app = Flask(__name__)
 app.secret_key = 'mi_llave_secreta_super_segura'
+ts = URLSafeTimedSerializer("CLAVE_SECRETA_PARA_EL_TOKEN")
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'ruben650160@gmail.com'
+app.config['MAIL_PASSWORD'] = 'gwwuxyrjezjiwodr'
+app.config['MAIL_DEFAULT_SENDER'] = 'ruben650160@gmail.com'
+
+mail = Mail(app)
 
 # =========================================================================
 # CONFIGURACIÓN DE LA BASE DE DATOS
@@ -53,6 +66,7 @@ class Usuario(db.Model):
     password = db.Column(db.String(100), nullable=False)
     rol = db.Column(db.String(20), default='cliente') 
     bloqueado = db.Column(db.Boolean, default=False)
+    activo = db.Column(db.Boolean, default=False)
 
     alquileres = db.relationship('ProductoAlquiler', backref='usuario', lazy=True)
     reservas_solicitadas = db.relationship('ProductoAlquiler', secondary=lista_espera, backref=db.backref('en_espera', lazy=True))
@@ -588,10 +602,14 @@ def login():
     if request.method == 'POST':
         user = Usuario.autenticar(request.form.get('email'), request.form.get('password'))
         if user:
+            if not user.activo:
+                flash("Tu cuenta aún no está verificada. Revisá tu correo.", "warning")
+                return redirect(url_for('login'))
             session['usuario_id'] = user.id
             session['usuario_nombre'] = user.nombre
             session['usuario_rol'] = user.rol
             flash(f"¡Hola de nuevo, {user.nombre}!", "success")
+            
             if user.es_staff():
                 return redirect(url_for('dashboard'))
             return redirect(url_for('inicio'))
@@ -610,12 +628,36 @@ def registro():
         if Usuario.query.filter_by(email=email).first():
             flash("El correo ya está registrado.", "danger")
             return redirect(url_for('registro'))
-        Usuario(nombre=nombre, email=email, password=password, rol='cliente').guardar()
-        flash("¡Cuenta creada con éxito! Ya podés iniciar sesión.", "success")
+        
+        nuevo = Usuario(nombre=nombre, email=email, password=password, rol='cliente', activo=False)
+        nuevo.guardar()
+
+        try:
+            token = ts.dumps(email, salt='activar-cuenta')
+            link = url_for('confirmar_email', token=token, _external=True)
+            msg = Message(subject="Verificá tu cuenta", recipients=[email])
+            msg.body = f"Para activar tu cuenta, hacé click acá: {link}"
+            mail.send(msg)
+        except Exception as e:
+            print(f"--- ERROR AL ENVIAR MAIL: {e} ---")
+
+        flash(f"¡Cuenta creada! Te enviamos un mail a {email} para verificarla.", "success")
         return redirect(url_for('login'))
     return render_template('registro.html')
 
-
+@app.route('/confirmar/<token>')
+def confirmar_email(token):
+    try:
+        email = ts.loads(token, salt='activar-cuenta', max_age=86400)
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            usuario.activo = True
+            db.session.commit()
+            return "<h1>¡Cuenta verificada!</h1><p>Ya podés cerrar esta pestaña e iniciar sesión.</p>"
+        return "Usuario no encontrado."
+    except:
+        return "<h1>El enlace es inválido o ya venció.</h1>"
+    
 # =========================================================================
 # CREACIÓN DE CONTEXTO E INICIALIZACIÓN DE PRUEBAS
 # =========================================================================
@@ -623,7 +665,7 @@ with app.app_context():
     db.create_all()  
     
     if not Usuario.query.filter_by(email="admin@alquiler.com").first():
-        Usuario(nombre="Admin", email="admin@alquiler.com", password="123", rol="admin").guardar()
+        Usuario(nombre="Admin", email="admin@alquiler.com", password="123", rol="admin", activo=True).guardar()
 
     if not Usuario.query.filter_by(email="empleado@alquiler.com").first():
         Usuario(nombre="Laura Empleada", email="empleado@alquiler.com", password="123", rol="empleado").guardar()
