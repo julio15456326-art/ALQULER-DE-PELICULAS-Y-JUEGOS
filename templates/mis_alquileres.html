@@ -52,7 +52,7 @@
                                 {% if a.estado == 'pendiente' %}
                                     <span class="texto-gris" style="color: #888;">Al confirmar</span>
                                 {% elif a.fecha_vencimiento %}
-                                    <span style="color: {% if vencido %}#ef4444{% else %}#ccc{% endif %};">
+                                    <span style="color: {% if vencido %} #ef4444 {% else %} #ccc {% endif %};">
                                         {{ a.fecha_vencimiento.strftime('%d/%m/%Y') }}
                                     </span>
                                 {% else %}

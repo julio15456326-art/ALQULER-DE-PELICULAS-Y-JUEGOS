@@ -398,7 +398,7 @@ def mis_alquileres():
 # =========================================================================
 
 @app.route('/admin/dashboard', methods=['GET', 'POST'])
-@requiere_nivel(10) # Protegido con el decorador de tu amigo
+@requiere_nivel( 5) # Protegido con el decorador de tu amigo
 def dashboard():
     usuario_actual = Usuario.buscar_por_id(session.get('usuario_id'))
     
@@ -507,7 +507,7 @@ def administrar_crear_usuario():
         if Usuario.query.filter_by(email=email).first():
             flash("El correo ya está registrado.", "danger")
             return redirect(url_for('administrar_crear_usuario'))
-        Usuario(nombre=nombre, email=email, password=password, rol=rol).guardar()
+        Usuario(nombre=nombre, email=email, password=password, rol=rol, activo=True).guardar()
         flash(f"Usuario '{nombre}' ({rol}) creado correctamente.", "success")
         return redirect(url_for('dashboard'))
     return render_template('crear_usuario_admin.html')
@@ -666,36 +666,6 @@ with app.app_context():
     
     if not Usuario.query.filter_by(email="admin@alquiler.com").first():
         Usuario(nombre="Admin", email="admin@alquiler.com", password="123", rol="admin", activo=True).guardar()
-
-    if not Usuario.query.filter_by(email="empleado@alquiler.com").first():
-        Usuario(nombre="Laura Empleada", email="empleado@alquiler.com", password="123", rol="empleado").guardar()
-
-    if Usuario.query.filter_by(rol='cliente').count() == 0:
-        u1 = Usuario(nombre="Carlos Gómez", email="carlos@gmail.com", password="123", rol="cliente", bloqueado=False)
-        u2 = Usuario(nombre="Mariana López", email="mariana@gmail.com", password="123", rol="cliente", bloqueado=False)
-        u3 = Usuario(nombre="Esteban Quito", email="esteban@gmail.com", password="123", rol="cliente", bloqueado=False)
-        u1.guardar()
-        u2.guardar()
-        u3.guardar()
-
-        p1 = Pelicula(titulo="Inception (El Origen)", genero="Ciencia Ficción", precio_alquiler=350.00, stock=2, imagen="default.jpg", formato="BluRay-4K", contador_alquileres=15)
-        p2 = Pelicula(titulo="El Padrino", genero="Drama / Crimen", precio_alquiler=300.00, stock=1, imagen="default.jpg", formato="DVD", contador_alquileres=40)
-        p3 = Pelicula(titulo="Avatar: El Camino del Agua", genero="Acción / Sci-Fi", precio_alquiler=500.00, stock=0, alquilado=True, imagen="default.jpg", formato="BluRay-3D", contador_alquileres=8)
-        
-        fecha_hace_10_dias = datetime.now() - timedelta(days=10)
-        fecha_vencimiento_vieja = fecha_hace_10_dias + timedelta(days=7)
-        p4 = Pelicula(titulo="Batman: El Caballero de la Noche", genero="Acción", precio_alquiler=400.00, stock=0, alquilado=True, imagen="default.jpg", formato="BluRay-4K", usuario_id=u1.id, fecha_alquiler=fecha_hace_10_dias, fecha_vencimiento=fecha_vencimiento_vieja, contador_alquileres=52, estado='activo')
-
-        j1 = Juego(titulo="The Legend of Zelda: Tears of the Kingdom", genero="Aventura", precio_alquiler=800.00, stock=3, imagen="default.jpg", plataforma="Nintendo Switch", contador_alquileres=25)
-        j2 = Juego(titulo="GTA V", genero="Acción / Mundo Abierto", precio_alquiler=450.00, stock=0, alquilado=True, imagen="gta.jpg", plataforma="PS5", usuario_id=u2.id, fecha_alquiler=datetime.now(), fecha_vencimiento=datetime.now() + timedelta(days=7), contador_alquileres=90, estado='activo')
-        j3 = Juego(titulo="Elden Ring", genero="Action RPG", precio_alquiler=700.00, stock=0, alquilado=True, imagen="ring.webp", plataforma="PC / Steam", contador_alquileres=14, usuario_id=u1.id, estado='pendiente')
-
-        db.session.add_all([p1, p2, p3, p4, j1, j2, j3])
-        db.session.commit()
-
-        p3.en_espera.append(u3)
-        db.session.commit()
-        print("¡Base de datos avanzada inicializada con éxito!")
 
 if __name__ == '__main__':
     app.run(debug=True)
