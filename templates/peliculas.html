@@ -26,29 +26,37 @@
 <main class="catalogo" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
     <h2 class="titulo-seccion" style="font-size: 1.5rem; margin-bottom: 24px; color: #fff;">Todas las Películas disponibles</h2>
     
-    <div class="lista-items">
+    <div class="lista-items" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%;">
         {% for p in peliculas %}
-            <div class="item">
-                <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
-                <h3>{{ p.titulo }}</h3>
-                <p>Género: {{ p.genero }}</p>
-                <p>{{ p.obtener_especifico() }}</p>
-                <p>
-                    {% if p.stock > 0 %}
-                        <span class="estado-disponible">✔ Disponible (Stock: {{ p.stock }})</span>
-                    {% else %}
-                        <span class="estado-sin-stock">⏳ Sin stock (Reserva disponible)</span>
-                    {% endif %}
-                </p>
-                <p class="precio">Precio: ${{ "%.2f"|format(p.precio_alquiler) }}</p>
-                <a href="{{ url_for('alquilar_item', prod_id=p.id) }}"
-                   class="btn-alquilar {% if p.stock > 0 %}disponible{% else %}reserva{% endif %}">
-                    {% if p.stock > 0 %}Solicitar{% else %}Reservar (En Espera){% endif %}
-                </a>
-            </div>
-        {% else %}
-            <p class="texto-vacio" style="color: #888; text-align: center; padding: 4px 0;">No hay películas registradas.</p>
-        {% endfor %}
+                <article class="item-card">
+                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt="{{ p.titulo }}">
+                    <div class="item-content">
+                        <div class="item-topline">
+                            <span class="badge" style="background-color: #e74c3c; color: white;">Película</span>
+                            <span class="price-tag">${{ "%.2f"|format(p.precio_alquiler) }}</span>
+                        </div>
+                        <h3>{{ p.titulo }}</h3>
+                        <p class="item-meta" style="margin-bottom: 2px;"><strong>Género:</strong> {{ p.genero or 'General' }}</p>
+                        <p class="item-meta" style="margin-bottom: 8px;"><strong>Filtro:</strong> {{ p.obtener_especifico() }}</p>
+                        
+                        <div style="margin-bottom: 15px; font-size: 0.9rem;">
+                            {% if p.stock > 0 %}
+                                <span style="color: #2ecc71; font-weight: 600;">✔ Disponible (Stock: {{ p.stock }})</span>
+                            {% else %}
+                                <span style="color: #f39c12; font-weight: 600;">⏳ Sin stock (Reserva disponible)</span>
+                            {% endif %}
+                        </div>
+
+                        <a href="{{ url_for('alquilar_item', prod_id=p.id) }}" 
+                           class="btn {% if p.stock > 0 %}btn-primary{% else %}btn-secondary{% endif %}" 
+                           style="width: 100%; text-align: center; display: block;">
+                            {% if p.stock > 0 %}Solicitar Alquiler{% else %}Reservar (Fila de Espera){% endif %}
+                        </a>
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-state">No hay películas en el stock.</div>
+            {% endfor %}
     </div>
 
     <div class="separador centrado" style="text-align: center; margin: 50px 0 40px 0;">
