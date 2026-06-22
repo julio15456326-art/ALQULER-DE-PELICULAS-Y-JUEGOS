@@ -46,9 +46,10 @@
                 </div>
                 <div>
                     <p class="precio" style="font-size: 1.2rem; font-weight: bold; color: #fff; margin: 12px 0;">${{ "%.2f"|format(j.precio_alquiler) }}</p>
-                    <a href="{{ url_for('alquilar_item', prod_id=j.id) }}"
-                       class="btn-alquilar {% if j.stock > 0 %}disponible{% else %}reserva{% endif %}">
-                        {% if j.stock > 0 %}Solicitar{% else %}Reservar{% endif %}
+                    <a href="{{ url_for('alquilar_item', prod_id=j.id) }}" 
+                        class="btn {% if j.stock > 0 %}btn-primary{% else %}btn-secondary{% endif %}" 
+                        style="width: 100%; text-align: center; display: block;">
+                        {% if j.stock > 0 %}Solicitar Alquiler{% else %}Reservar (Fila de Espera){% endif %}
                     </a>
                 </div>
             </div>

@@ -168,6 +168,8 @@ class ProductoAlquiler(db.Model):
             return None
 
     def solicitar_alquiler(self, usuario):
+        if self.usuario_id == usuario.id and self.estado in ['pendiente', 'activo']:
+            return "ya_solicitado" # Retornamos un nuevo estado para avisarle al usuario
         if usuario.bloqueado:
             return "usuario_bloqueado"
         if self.stock > 0:
@@ -352,6 +354,9 @@ def alquilar_item(prod_id):
 
     if resultado == "usuario_bloqueado":
         flash("Tu cuenta se encuentra SUSPENDIDA. Comunícate con soporte.", "danger")
+    elif resultado == "ya_solicitado":
+        # Manejo del nuevo caso para evitar que baje el stock repetidamente
+        flash("Ya tenés una solicitud pendiente o un alquiler activo para este producto.", "warning")
     elif resultado == "pendiente":
         flash("¡Solicitud enviada! El local la confirmará a la brevedad.", "info")
     elif resultado == "reservado":
