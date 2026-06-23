@@ -78,17 +78,17 @@
                     <tbody>
                         {% for s in solicitudes %}
                         <tr>
-                            <td style="font-weight: bold;">{{ s.titulo }}</td>
-                            <td class="texto-claro" style="text-transform: capitalize;">{{ s.tipo_producto }}</td>
+                            <td style="font-weight: bold;">{{ s.producto.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ s.producto.tipo_producto }}</td>
                             <td>
                                 <span style="font-weight: bold;">{{ s.usuario.nombre }}</span><br>
                                 <span class="texto-gris" style="font-size: 0.8rem;">{{ s.usuario.email }}</span>
                             </td>
                             <td style="text-align: center; white-space: nowrap;">
-                                <a href="{{ url_for('confirmar_alquiler', prod_id=s.id) }}" class="btn-accion ok">
+                                <a href="{{ url_for('confirmar_alquiler', alquiler_id=s.id) }}" class="btn-accion ok">
                                     <i class="fas fa-check"></i> Confirmar
                                 </a>
-                                <a href="{{ url_for('rechazar_alquiler', prod_id=s.id) }}"
+                                <a href="{{ url_for('rechazar_alquiler', alquiler_id=s.id) }}"
                                    onclick="return confirm('¿Rechazar la solicitud de {{ s.usuario.nombre }}?');"
                                    class="btn-accion peligro">
                                     <i class="fas fa-times"></i> Rechazar
@@ -118,14 +118,14 @@
                     <tbody>
                         {% for d in devoluciones %}
                         <tr>
-                            <td style="font-weight: bold;">{{ d.titulo }}</td>
-                            <td class="texto-claro" style="text-transform: capitalize;">{{ d.tipo_producto }}</td>
+                            <td style="font-weight: bold;">{{ d.producto.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ d.producto.tipo_producto }}</td>
                             <td>
                                 <span style="font-weight: bold;">{{ d.usuario.nombre }}</span><br>
                                 <span class="texto-gris" style="font-size: 0.8rem;">{{ d.usuario.email }}</span>
                             </td>
                             <td style="text-align: center;">
-                                <a href="{{ url_for('confirmar_devolucion', prod_id=d.id) }}" class="btn-accion ok">
+                                <a href="{{ url_for('confirmar_devolucion', alquiler_id=d.id) }}" class="btn-accion ok">
                                     <i class="fas fa-box-open"></i> Confirmar Devolución
                                 </a>
                             </td>
@@ -331,8 +331,8 @@
                     {% for a in alquileres %}
                         {% set vencido = a.esta_vencido() %}
                         <tr {% if vencido %}style="background: rgba(255,68,68,0.05);"{% endif %}>
-                            <td style="font-weight: bold;">{{ a.titulo }}</td>
-                            <td class="texto-claro" style="text-transform: capitalize;">{{ a.tipo_producto }}</td>
+                            <td style="font-weight: bold;">{{ a.producto.titulo }}</td>
+                            <td class="texto-claro" style="text-transform: capitalize;">{{ a.producto.tipo_producto }}</td>
                             <td>
                                 <span style="font-weight: bold;">{{ a.usuario.nombre }}</span><br>
                                 <span class="texto-gris" style="font-size: 0.8rem;">{{ a.usuario.email }}</span>

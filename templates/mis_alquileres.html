@@ -31,10 +31,10 @@
                     {% for a in alquileres %}
                         {% set vencido = a.esta_vencido() %}
                         <tr {% if vencido %}style="background: rgba(255,68,68,0.04);"{% endif %} style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 16px 12px; font-weight: bold; color: #fff;">{{ a.titulo }}</td>
-                            <td class="texto-claro" style="padding: 16px 12px; text-transform: capitalize; color: #ccc;">{{ a.tipo_producto }}</td>
-                            <td class="texto-gris" style="padding: 16px 12px; color: #888;">{{ a.obtener_especifico() }}</td>
-                            <td class="texto-verde" style="padding: 16px 12px; color: #10b981;">${{ "%.2f"|format(a.precio_alquiler) }}</td>
+                            <td style="padding: 16px 12px; font-weight: bold; color: #fff;">{{ a.producto.titulo }}</td>
+                            <td class="texto-claro" style="padding: 16px 12px; text-transform: capitalize; color: #ccc;">{{ a.producto.tipo_producto }}</td>
+                            <td class="texto-gris" style="padding: 16px 12px; color: #888;">{{ a.producto.obtener_especifico() }}</td>
+                            <td class="texto-verde" style="padding: 16px 12px; color: #10b981;">${{ "%.2f"|format(a.producto.precio_alquiler) }}</td>
 
                             <td style="padding: 16px 12px;">
                                 {% if a.estado == 'pendiente' %}
@@ -64,8 +64,8 @@
                                 {% if a.estado == 'pendiente' %}
                                     <span class="texto-gris" style="font-style: italic; color: #888;">Esperando local</span>
                                 {% elif a.estado == 'activo' %}
-                                    <a href="{{ url_for('devolver_item', prod_id=a.id) }}"
-                                       onclick="return confirm('¿Confirmás que ya devolviste \'{{ a.titulo }}\'? El local verificará la recepción.');"
+                                    <a href="{{ url_for('devolver_item', alquiler_id=a.id) }}"
+                                       onclick="return confirm('¿Confirmás que ya devolviste \'{{ a.producto.titulo }}\'? El local verificará la recepción.');"
                                        style="background: rgba(239,68,68,0.15); color: #ef4444; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
                                         Devolver
                                     </a>

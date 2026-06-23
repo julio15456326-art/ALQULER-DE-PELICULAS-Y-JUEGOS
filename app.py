@@ -31,7 +31,7 @@ db = SQLAlchemy(app)
 
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'img')
 
-# --- CONTROL DE ROLES (Agregado del código de tu amigo) ---
+# --- CONTROL DE ROLES ---
 NIVELES_ACCESO = {'cliente': 1, 'empleado': 5, 'admin': 10}
 
 def requiere_nivel(nivel_minimo):
@@ -54,7 +54,7 @@ lista_espera = db.Table('lista_espera',
 )
 
 # =========================================================================
-# MODELOS DE CLASES (POO - Versión Avanzada Tuya)
+# MODELOS
 # =========================================================================
 
 class Usuario(db.Model):
@@ -68,7 +68,8 @@ class Usuario(db.Model):
     bloqueado = db.Column(db.Boolean, default=False)
     activo = db.Column(db.Boolean, default=False)
 
-    alquileres = db.relationship('ProductoAlquiler', backref='usuario', lazy=True)
+    # Relación con los alquileres individuales
+    mis_alquileres = db.relationship('Alquiler', backref='usuario', lazy=True, cascade='all, delete-orphan')
     reservas_solicitadas = db.relationship('ProductoAlquiler', secondary=lista_espera, backref=db.backref('en_espera', lazy=True))
 
     def guardar(self):
@@ -103,12 +104,9 @@ class ProductoAlquiler(db.Model):
     contador_alquileres = db.Column(db.Integer, default=0) 
     tipo_producto = db.Column(db.String(50)) 
 
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
-    fecha_alquiler = db.Column(db.DateTime, nullable=True)
-    fecha_vencimiento = db.Column(db.DateTime, nullable=True)
-    estado = db.Column(db.String(30), default='disponible')
+    # Relación con alquileres individuales
+    alquileres_activos = db.relationship('Alquiler', backref='producto', lazy=True, cascade='all, delete-orphan')
 
-    # Propiedad dinámica agregada para compatibilidad con los HTML de tu amigo que buscan .precio
     @property
     def precio(self):
         return self.precio_alquiler
@@ -121,93 +119,81 @@ class ProductoAlquiler(db.Model):
     def obtener_especifico(self):
         return "No aplica"
 
+    def solicitar_alquiler(self, usuario):
+        # Verificar si ya tiene un alquiler activo/pendiente para este producto
+        ya_tiene = Alquiler.query.filter_by(usuario_id=usuario.id, producto_id=self.id).filter(
+            Alquiler.estado.in_(['pendiente', 'activo', 'dev_pendiente'])
+        ).first()
+        if ya_tiene:
+            return "ya_solicitado"
+
+        if usuario.bloqueado:
+            return "usuario_bloqueado"
+
+        if self.stock > 0:
+            self.stock -= 1
+            if self.stock == 0:
+                self.alquilado = True
+            nuevo_alquiler = Alquiler(
+                usuario_id=usuario.id,
+                producto_id=self.id,
+                estado='pendiente'
+            )
+            db.session.add(nuevo_alquiler)
+            db.session.commit()
+            return "pendiente"
+
+        elif usuario not in self.en_espera:
+            self.en_espera.append(usuario)
+            db.session.commit()
+            return "reservado"
+
+        return "ya_esperando"
+
+    def devolver_producto(self):
+        """Compatibilidad: libera stock cuando se elimina un usuario."""
+        self.stock += 1
+        self.alquilado = False
+        db.session.commit()
+
+
+class Alquiler(db.Model):
+    """Representa un alquiler individual de un producto por un usuario."""
+    __tablename__ = 'alquileres_activos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos_alquiler.id'), nullable=False)
+    estado = db.Column(db.String(30), default='pendiente')  # pendiente, activo, dev_pendiente
+    fecha_alquiler = db.Column(db.DateTime, nullable=True)
+    fecha_vencimiento = db.Column(db.DateTime, nullable=True)
+
     def esta_vencido(self):
         if self.fecha_vencimiento and datetime.now() > self.fecha_vencimiento:
             return True
         return False
 
-    def alquilar_a(self, usuario):
-        if usuario.bloqueado:
-            return "usuario_bloqueado"
-
-        if self.stock > 0:
-            self.stock -= 1
-            self.contador_alquileres += 1 
-            self.usuario_id = usuario.id 
-            self.fecha_alquiler = datetime.now()
-            self.fecha_vencimiento = datetime.now() + timedelta(days=7)
-            
-            if self.stock == 0:
-                self.alquilado = True                                                                             
-            db.session.commit()
-            return "alquilado"
-        
-        elif usuario not in self.en_espera:
-            self.en_espera.append(usuario)
-            db.session.commit()
-            return "reservado"
-        
-        return "ya_esperando"
-
-    def devolver_producto(self):
-        if len(self.en_espera) > 0:
-            proximo_usuario = self.en_espera.pop(0)
-            self.usuario_id = proximo_usuario.id
-            self.fecha_alquiler = datetime.now()
-            self.fecha_vencimiento = datetime.now() + timedelta(days=7)
-            self.contador_alquileres += 1
-            db.session.commit()
-            return proximo_usuario
-        else:
-            self.stock += 1
-            self.alquilado = False                                                                                                                                    
-            self.usuario_id = None 
-            self.fecha_alquiler = None
-            self.fecha_vencimiento = None
-            db.session.commit()
-            return None
-
-    def solicitar_alquiler(self, usuario):
-        if self.usuario_id == usuario.id and self.estado in ['pendiente', 'activo']:
-            return "ya_solicitado" # Retornamos un nuevo estado para avisarle al usuario
-        if usuario.bloqueado:
-            return "usuario_bloqueado"
-        if self.stock > 0:
-            self.stock -= 1
-            self.usuario_id = usuario.id
-            self.estado = 'pendiente'
-            if self.stock == 0:
-                self.alquilado = True
-            db.session.commit()
-            return "pendiente"
-        elif usuario not in self.en_espera:
-            self.en_espera.append(usuario)
-            db.session.commit()
-            return "reservado"
-        return "ya_esperando"
-
-    def confirmar_alquiler(self):
+    def confirmar(self):
         if self.estado != 'pendiente':
             return False
         self.estado = 'activo'
         self.fecha_alquiler = datetime.now()
         self.fecha_vencimiento = datetime.now() + timedelta(days=7)
-        self.contador_alquileres += 1
+        self.producto.contador_alquileres += 1
         db.session.commit()
         return True
 
-    def rechazar_alquiler(self):
+    def rechazar(self):
         if self.estado != 'pendiente':
             return False
-        self.stock += 1
-        self.alquilado = False
-        self.usuario_id = None
-        self.estado = 'disponible'
+        self.producto.stock += 1
+        self.producto.alquilado = False
+        db.session.delete(self)
         db.session.commit()
         return True
 
-    def solicitar_devolucion(self, usuario):
-        if self.usuario_id != usuario.id or self.estado != 'activo':
+    def solicitar_devolucion(self):
+        if self.estado != 'activo':
             return False
         self.estado = 'dev_pendiente'
         db.session.commit()
@@ -216,20 +202,27 @@ class ProductoAlquiler(db.Model):
     def confirmar_devolucion(self):
         if self.estado != 'dev_pendiente':
             return None
-        if len(self.en_espera) > 0:
-            proximo_usuario = self.en_espera.pop(0)
-            self.usuario_id = proximo_usuario.id
-            self.estado = 'pendiente'   
+        producto = self.producto
+        db.session.delete(self)
+        db.session.flush()  # Ejecuta el delete antes de seguir
+
+        # Si hay alguien en lista de espera, asignarle el producto
+        if len(producto.en_espera) > 0:
+            proximo_usuario = producto.en_espera[0]
+            producto.en_espera.remove(proximo_usuario)
+            nuevo_alquiler = Alquiler(
+                usuario_id=proximo_usuario.id,
+                producto_id=producto.id,
+                estado='pendiente'
+            )
+            db.session.add(nuevo_alquiler)
             db.session.commit()
             return proximo_usuario
-        self.stock += 1
-        self.alquilado = False
-        self.usuario_id = None
-        self.fecha_alquiler = None
-        self.fecha_vencimiento = None
-        self.estado = 'disponible'
-        db.session.commit()
-        return None
+        else:
+            producto.stock += 1
+            producto.alquilado = False
+            db.session.commit()
+            return None
 
 
 class Pelicula(ProductoAlquiler):
@@ -246,6 +239,7 @@ class Juego(ProductoAlquiler):
 
     def obtener_especifico(self):
         return f"Plataforma: {self.plataforma}" if self.plataforma else "Sin plataforma"
+
 
 # =========================================================================
 # CONTROLADOR GESTOR DE INVENTARIO
@@ -276,13 +270,6 @@ class GestorInventario:
         if limite:
             query = query.limit(limite)
         return query.all()
-    
-    @staticmethod
-    def procesar_alquiler(id_prod, usuario):
-        producto = ProductoAlquiler.query.get(id_prod)
-        if not producto:
-            return "no_encontrado"
-        return producto.alquilar_a(usuario)
 
     @staticmethod
     def calcular_ingresos_estimados():
@@ -291,11 +278,15 @@ class GestorInventario:
 
     @staticmethod
     def solicitudes_pendientes():
-        return ProductoAlquiler.query.filter_by(estado='pendiente').all()
+        return Alquiler.query.filter_by(estado='pendiente').all()
 
     @staticmethod
     def devoluciones_pendientes():
-        return ProductoAlquiler.query.filter_by(estado='dev_pendiente').all()
+        return Alquiler.query.filter_by(estado='dev_pendiente').all()
+
+    @staticmethod
+    def alquileres_activos():
+        return Alquiler.query.filter_by(estado='activo').all()
 
 
 # =========================================================================
@@ -307,7 +298,6 @@ def inicio():
     peliculas = GestorInventario.listar_para_catalogo(Pelicula, limite=4)
     juegos = GestorInventario.listar_para_catalogo(Juego, limite=4)
 
-# 1. Traemos el top 1 de cada uno para comparar
     top_pelicula = peliculas[0] if peliculas else None
     top_juego = juegos[0] if juegos else None
     destacado = None
@@ -321,7 +311,6 @@ def inicio():
     elif top_juego:
         destacado = top_juego
 
-    # 3. Pasamos la variable 'destacado' al template
     return render_template('inicio.html', 
                            peliculas=peliculas, 
                            juegos=juegos, 
@@ -355,7 +344,6 @@ def alquilar_item(prod_id):
     if resultado == "usuario_bloqueado":
         flash("Tu cuenta se encuentra SUSPENDIDA. Comunícate con soporte.", "danger")
     elif resultado == "ya_solicitado":
-        # Manejo del nuevo caso para evitar que baje el stock repetidamente
         flash("Ya tenés una solicitud pendiente o un alquiler activo para este producto.", "warning")
     elif resultado == "pendiente":
         flash("¡Solicitud enviada! El local la confirmará a la brevedad.", "info")
@@ -366,14 +354,14 @@ def alquilar_item(prod_id):
         
     return redirect(request.referrer or url_for('inicio'))
 
-@app.route('/devolver/<int:prod_id>')
-def devolver_item(prod_id):
+@app.route('/devolver/<int:alquiler_id>')
+def devolver_item(alquiler_id):
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     usuario_actual = Usuario.buscar_por_id(session['usuario_id'])
-    producto = GestorInventario.buscar_producto_por_id(prod_id)
-    if producto and producto.solicitar_devolucion(usuario_actual):
-        flash(f"Devolución de '{producto.titulo}' registrada. El local la confirmará cuando reciba el producto.", "info")
+    alquiler = Alquiler.query.get(alquiler_id)
+    if alquiler and alquiler.usuario_id == usuario_actual.id and alquiler.solicitar_devolucion():
+        flash(f"Devolución de '{alquiler.producto.titulo}' registrada. El local la confirmará cuando reciba el producto.", "info")
     else:
         flash("No se pudo registrar la devolución.", "danger")
     return redirect(url_for('mis_alquileres'))
@@ -395,15 +383,20 @@ def mis_alquileres():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     usuario_actual = Usuario.buscar_por_id(session['usuario_id'])
-    return render_template('mis_alquileres.html', alquileres=usuario_actual.alquileres, reservas=usuario_actual.reservas_solicitadas)
+    alquileres = Alquiler.query.filter_by(usuario_id=usuario_actual.id).filter(
+        Alquiler.estado.in_(['pendiente', 'activo', 'dev_pendiente'])
+    ).all()
+    return render_template('mis_alquileres.html', 
+                           alquileres=alquileres, 
+                           reservas=usuario_actual.reservas_solicitadas)
 
 
 # =========================================================================
-# RUTAS EXCLUSIVAS DE ADMINISTRACIÓN (TÚ SUPER DASHBOARD CON DECORADOR)
+# RUTAS EXCLUSIVAS DE ADMINISTRACIÓN
 # =========================================================================
 
 @app.route('/admin/dashboard', methods=['GET', 'POST'])
-@requiere_nivel( 5) # Protegido con el decorador de tu amigo
+@requiere_nivel(5)
 def dashboard():
     usuario_actual = Usuario.buscar_por_id(session.get('usuario_id'))
     
@@ -415,7 +408,6 @@ def dashboard():
         genero = request.form.get('genero')
         especifico_f = request.form.get('especifico') 
         
-        # Compatibilidad: Soporta carga por archivo o por campo de texto simple de tu amigo
         file_imagen = request.files.get('imagen')
         if file_imagen and file_imagen.filename != '':
             nombre_imagen = secure_filename(file_imagen.filename)
@@ -434,7 +426,6 @@ def dashboard():
 
     usuarios_registrados = Usuario.query.filter(Usuario.rol == 'cliente').all()
     todos_los_productos = ProductoAlquiler.query.all()
-    alquileres_activos = ProductoAlquiler.query.filter(ProductoAlquiler.estado == 'activo').all()
 
     return render_template(
         'dashboard.html', 
@@ -444,7 +435,7 @@ def dashboard():
         ingresos=GestorInventario.calcular_ingresos_estimados(),
         usuarios=usuarios_registrados,
         productos=todos_los_productos,
-        alquileres=alquileres_activos,
+        alquileres=GestorInventario.alquileres_activos(),
         solicitudes=GestorInventario.solicitudes_pendientes(),
         devoluciones=GestorInventario.devoluciones_pendientes(),
         es_admin=usuario_actual.es_admin()
@@ -471,8 +462,11 @@ def administrar_bloqueo(user_id):
 def administrar_eliminar_usuario(user_id):
     user = Usuario.buscar_por_id(user_id)
     if user:
-        for p in user.alquileres:
-            p.devolver_producto()
+        # Liberar stock de todos sus alquileres activos/pendientes
+        for alquiler in user.mis_alquileres:
+            if alquiler.estado in ('pendiente', 'activo', 'dev_pendiente'):
+                alquiler.producto.stock += 1
+                alquiler.producto.alquilado = False
         db.session.delete(user)
         db.session.commit()
         flash("Usuario eliminado del sistema correctamente.", "success")
@@ -497,7 +491,7 @@ def administrar_editar_usuario(user_id):
         if nueva_pass:
             user.password = nueva_pass
         db.session.commit()
-        flash(f"Usuario '{user.nombre}' updated correctamente.", "success")
+        flash(f"Usuario '{user.nombre}' actualizado correctamente.", "success")
         return redirect(url_for('dashboard'))
     return render_template('editar_usuario.html', usuario=user)
 
@@ -518,7 +512,7 @@ def administrar_crear_usuario():
     return render_template('crear_usuario_admin.html')
 
 @app.route('/admin/producto/eliminar/<int:prod_id>')
-@requiere_nivel(5) # Habilitado para empleados o admins
+@requiere_nivel(5)
 def administrar_eliminar_producto(prod_id):
     if GestorInventario.eliminar_producto(prod_id):
         flash("Producto eliminado del inventario.", "success")
@@ -531,10 +525,16 @@ def administrar_editar_stock(prod_id):
     if producto:
         nuevo_stock = int(request.form.get('nuevo_stock', 0))
         producto.stock = nuevo_stock
+        # Asignar stock disponible a usuarios en lista de espera
         while producto.stock > 0 and len(producto.en_espera) > 0:
-            proximo = producto.en_espera.pop(0)
-            producto.usuario_id = proximo.id
-            producto.estado = 'pendiente'   
+            proximo = producto.en_espera[0]
+            producto.en_espera.remove(proximo)
+            nuevo_alquiler = Alquiler(
+                usuario_id=proximo.id,
+                producto_id=producto.id,
+                estado='pendiente'
+            )
+            db.session.add(nuevo_alquiler)
             producto.stock -= 1
             if producto.stock == 0:
                 producto.alquilado = True
@@ -569,37 +569,38 @@ def administrar_editar_producto(prod_id):
         return redirect(url_for('dashboard'))
     return render_template('editar_producto.html', producto=producto)
 
-@app.route('/admin/alquiler/confirmar/<int:prod_id>')
+@app.route('/admin/alquiler/confirmar/<int:alquiler_id>')
 @requiere_nivel(5)
-def confirmar_alquiler(prod_id):
-    producto = GestorInventario.buscar_producto_por_id(prod_id)
-    if producto and producto.confirmar_alquiler():
-        flash(f"Alquiler de '{producto.titulo}' confirmado para {producto.usuario.nombre}.", "success")
+def confirmar_alquiler(alquiler_id):
+    alquiler = Alquiler.query.get(alquiler_id)
+    if alquiler and alquiler.confirmar():
+        flash(f"Alquiler de '{alquiler.producto.titulo}' confirmado para {alquiler.usuario.nombre}.", "success")
     return redirect(url_for('dashboard'))
 
-@app.route('/admin/alquiler/rechazar/<int:prod_id>')
+@app.route('/admin/alquiler/rechazar/<int:alquiler_id>')
 @requiere_nivel(5)
-def rechazar_alquiler(prod_id):
-    producto = GestorInventario.buscar_producto_por_id(prod_id)
-    if producto and producto.rechazar_alquiler():
-        flash(f"Solicitud de '{producto.titulo}' rechazada. Stock repuesto.", "info")
+def rechazar_alquiler(alquiler_id):
+    alquiler = Alquiler.query.get(alquiler_id)
+    if alquiler and alquiler.rechazar():
+        flash(f"Solicitud de '{alquiler.producto.titulo}' rechazada. Stock repuesto.", "info")
     return redirect(url_for('dashboard'))
 
-@app.route('/admin/devolucion/confirmar/<int:prod_id>')
+@app.route('/admin/devolucion/confirmar/<int:alquiler_id>')
 @requiere_nivel(5)
-def confirmar_devolucion(prod_id):
-    producto = GestorInventario.buscar_producto_por_id(prod_id)
-    if producto:
-        proximo = producto.confirmar_devolucion()
+def confirmar_devolucion(alquiler_id):
+    alquiler = Alquiler.query.get(alquiler_id)
+    if alquiler:
+        titulo = alquiler.producto.titulo
+        proximo = alquiler.confirmar_devolucion()
         if proximo:
-            flash(f"Devolución confirmada. '{producto.titulo}' asignado a {proximo.nombre} (lista de espera).", "info")
+            flash(f"Devolución confirmada. '{titulo}' asignado a {proximo.nombre} (lista de espera).", "info")
         else:
-            flash(f"Devolución de '{producto.titulo}' confirmada. Producto de vuelta en stock.", "success")
+            flash(f"Devolución de '{titulo}' confirmada. Producto de vuelta en stock.", "success")
     return redirect(url_for('dashboard'))
 
 
 # =========================================================================
-# RUTAS DE AUTENTICACIÓN Y SESIÓN (FUSIONADAS)
+# RUTAS DE AUTENTICACIÓN Y SESIÓN
 # =========================================================================
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -664,7 +665,7 @@ def confirmar_email(token):
         return "<h1>El enlace es inválido o ya venció.</h1>"
     
 # =========================================================================
-# CREACIÓN DE CONTEXTO E INICIALIZACIÓN DE PRUEBAS
+# INICIALIZACIÓN
 # =========================================================================
 with app.app_context():
     db.create_all()  
