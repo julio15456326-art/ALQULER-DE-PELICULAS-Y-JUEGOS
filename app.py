@@ -6,6 +6,7 @@ from functools import wraps
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Mail, Message
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'mi_llave_secreta_super_segura'
@@ -73,6 +74,8 @@ class Usuario(db.Model):
     reservas_solicitadas = db.relationship('ProductoAlquiler', secondary=lista_espera, backref=db.backref('en_espera', lazy=True))
 
     def guardar(self):
+        if self.password and not self.password.startswith('scrypt:'):
+            self.password = generate_password_hash(self.password)
         db.session.add(self)
         db.session.commit()
 
@@ -86,10 +89,41 @@ class Usuario(db.Model):
     def buscar_por_id(cls, usuario_id):
         return cls.query.get(usuario_id)
 
+    #MÉTODO DE AUTENTICACIÓN
     @classmethod
     def autenticar(cls, email_f, pass_f):
-        return cls.query.filter_by(email=email_f, password=pass_f).first()
+        #Buscamos si el usuario existe por email
+        user = cls.query.filter_by(email=email_f).first()
+        if user:
+            #Si ya está hasheada con scrypt
+            if user.password.startswith('scrypt:'):
+                if check_password_hash(user.password, pass_f):
+                    return user
+            #Si es texto plano o coincide directo
+            elif user.password == pass_f:
+                return user
+        return None
 
+    # --- MÉTODOS POO PARA EL RECUPERO DE CONTRASEÑA ---
+
+    @staticmethod
+    def generar_token_recupero(email):
+        """Método Estático: Genera el token cifrado para el mail sin instanciar el objeto."""
+        return ts.dumps(email, salt='recuperar-password')
+
+    @staticmethod
+    def verificar_token_recupero(token, expiration=3600):
+        """Método Estático: Descifra el token y valida el tiempo de expiración (1 hora)."""
+        try:
+            email = ts.loads(token, salt='recuperar-password', max_age=expiration)
+            return email
+        except:
+            return None
+
+    def resetear_password(self, nueva_password):
+        """Método de Instancia: El objeto usuario se modifica a sí mismo y persiste el cambio."""
+        self.password = generate_password_hash(nueva_password)
+        db.session.commit()
 
 class ProductoAlquiler(db.Model):
     __tablename__ = 'productos_alquiler'
@@ -663,6 +697,49 @@ def confirmar_email(token):
         return "Usuario no encontrado."
     except:
         return "<h1>El enlace es inválido o ya venció.</h1>"
+    
+@app.route('/recuperar-password', methods=['GET', 'POST'])
+def recuperar_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        
+        # Buscamos al usuario usando el ORM
+        usuario = Usuario.query.filter_by(email=email).first()
+        
+        if usuario:
+            # POO: Llamamos al método estático de la clase
+            token = Usuario.generar_token_recupero(email)
+            link = url_for('resetear_password', token=token, _external=True)
+            
+            msg = Message("Recuperación de contraseña", recipients=[email])
+            msg.body = f"Hacé clic en el siguiente enlace para restablecer tu contraseña: {link}"
+            mail.send(msg)
+            
+        flash("Si el correo existe, recibirás un mensaje en breve.")
+        return redirect(url_for('login'))
+        
+    return render_template('recuperar.html')
+
+
+@app.route('/resetear-password/<token>', methods=['GET', 'POST'])
+def resetear_password(token):
+    # POO: Usamos la clase para verificar el token que vino por la URL
+    email = Usuario.verificar_token_recupero(token)
+    if not email:
+        flash("El token es inválido o ya expiró.")
+        return redirect(url_for('vista_login'))
+    
+    if request.method == 'POST':
+        nueva_password = request.form['password']
+        
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            # POO: El objeto usuario ejecuta su propio método para cambiarse la clave
+            usuario.resetear_password(nueva_password)
+            flash("Contraseña actualizada con éxito.")
+            return redirect(url_for('login'))
+            
+    return render_template('resetear.html', token=token)
     
 # =========================================================================
 # INICIALIZACIÓN

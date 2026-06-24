@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Alquilando — Resetear Contraseña{% endblock %}
+
+{% block content %}
+<main class="catalogo" style="min-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px;">
+
+    <div class="auth-container">
+        <h2 class="subtitulo-seccion" style="margin-top: 0; margin-bottom: 28px; font-size: 2.2rem; text-align: center;">Nueva Contraseña</h2>
+
+        <form action="{{ url_for('resetear_password', token=token) }}" method="POST" class="form-simple" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit" class="auth-btn">Ingresar</button>
+        </form>
+    </div>
+
+</main>
+{% endblock %}
