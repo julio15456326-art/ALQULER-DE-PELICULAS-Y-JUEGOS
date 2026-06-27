@@ -717,3 +717,65 @@ a:hover {
 .auth-btn:hover {
     background: #4f46e5;
 }
+/* Contenedor fijo en la esquina superior derecha */
+.flash-stack-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+    width: 100%;
+}
+
+/* Diseño de la tarjeta del mensaje flotante */
+.flash-toast {
+    background-color: #333;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: sans-serif;
+    font-size: 0.95rem;
+    animation: slideIn 0.3s ease forwards;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Colores según la categoría de Flask */
+.toast-success {
+    border-left: 5px solid #2ecc71;
+    background-color: #1e272e;
+}
+
+.toast-danger, .toast-error {
+    border-left: 5px solid #e74c3c;
+    background-color: #1e272e;
+}
+
+.toast-info {
+    border-left: 5px solid #3498db;
+    background-color: #1e272e;
+}
+
+/* Animación de entrada (Deslizar desde la derecha) */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Clase que aplica JavaScript para desvanecer y elevar el mensaje */
+.flash-toast.fade-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}

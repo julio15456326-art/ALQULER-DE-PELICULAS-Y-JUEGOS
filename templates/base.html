@@ -17,8 +17,6 @@
             </a>
 
             <nav class="site-nav" aria-label="Navegación principal">
-                
-                
                 {% if session.get('usuario_rol') in ('admin', 'empleado') %}
                     <a class="nav-link" href="{{ url_for('dashboard') }}">
                         <i class="fa-solid to fa-chart-line"></i> Panel Admin
@@ -42,10 +40,17 @@
             
             {% with mensajes = get_flashed_messages(with_categories=true) %}
                 {% if mensajes %}
-                    <div class="flash-stack" aria-live="polite">
+                    <div class="flash-stack-toast" aria-live="polite">
                         {% for categoria, mensaje in mensajes %}
-                            <div class="flash flash-{% if categoria == 'error' %}danger{% else %}{{ categoria }}{% endif %}">
-                                {{ mensaje }}
+                            <div class="flash-toast toast-{% if categoria == 'error' or categoria == 'danger' %}danger{% else %}{{ categoria }}{% endif %}">
+                                <span class="toast-icon">
+                                    {% if categoria == 'error' or categoria == 'danger' %}
+                                        ❌
+                                    {% else %}
+                                        ✅
+                                    {% endif %}
+                                </span>
+                                <span class="toast-message">{{ mensaje }}</span>
                             </div>
                         {% endfor %}
                     </div>
@@ -58,6 +63,23 @@
     </div>
 
 <script>
+    // --- Autodesvanecido de mensajes flotantes (Toasts) ---
+    document.addEventListener("DOMContentLoaded", function() {
+        const toasts = document.querySelectorAll('.flash-toast');
+        
+        toasts.forEach((toast) => {
+            // Espera 3.5 segundos antes de empezar a desvanecer
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                
+                // Espera 0.5 segundos más (lo que dura la transición CSS) y elimina el elemento del DOM
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, 3500); 
+        });
+    });
+
     // Restaurar posición del scroll al cargar la página
     (function () {
         var pos = sessionStorage.getItem('scrollPos');
